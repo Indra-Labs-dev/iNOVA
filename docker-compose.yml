@@ -1,0 +1,35 @@
+# iNOVA — local development services.
+#
+# Deliberately minimal (see docs/13-devops/docker.md, docs/adr/0008-modular-architecture.md
+# "avoid speculative infrastructure"): only PostgreSQL is containerized. Backend and
+# frontend run natively (see docs/15-development/setup.md). Ollama also runs natively
+# on the host to access the GPU directly (see docs/13-devops/docker.md).
+#
+# Redis is intentionally NOT included here — Phase 0 has no documented use case that
+# needs it yet (see docs/09-backend/background-jobs.md open decision). Add it only
+# when a real mechanism requires it, per docs/16-roadmap/phases.md instructions.
+#
+# Port 5432 (and often 5433) are already taken by other local projects on shared dev
+# machines — this maps to 5434 on the host to avoid collisions; the container's
+# internal port is still 5432. Override via a local .env / COMPOSE_ file if 5434 is
+# also taken in your environment.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: inova
+      # Dev-only default, never used in staging/production — see docs/12-security/secrets.md.
+      POSTGRES_PASSWORD: inova_dev_password
+      POSTGRES_DB: inova
+    ports:
+      - "5434:5432"
+    volumes:
+      - inova_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inova -d inova"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  inova_postgres_data:

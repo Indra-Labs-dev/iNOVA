@@ -1,6 +1,6 @@
 # Authentication
 
-**Status:** [PLANNED]
+**Status:** [IN PROGRESS] — approach decided ([ADR-0010](../adr/0010-authentication-approach.md)), Phase 0 scaffolding in progress
 **Owner:** Archange Elie Yatte
 **Last Updated:** 2026-08-08
 
@@ -12,9 +12,11 @@ Define how a user proves identity to iNOVA.
 
 AuthN only — see [authorization.md](authorization.md) for what an authenticated user can then do.
 
-## Approach
+## Approach — decided
 
-`TODO — decision required`. Not chosen arbitrarily — options and criteria below. Either way: implemented from the first working version, never retrofitted (see [12-security/security-architecture.md](../12-security/security-architecture.md)).
+In-house: JWT access tokens (short-lived, HS256) + a PostgreSQL-backed `sessions` table holding hashed, rotating, revocable refresh tokens. Passwords hashed with Argon2id. See [ADR-0010](../adr/0010-authentication-approach.md) for the full analysis against the criteria below. Implemented from the first working version, never retrofitted (see [12-security/security-architecture.md](../12-security/security-architecture.md)).
+
+Options and criteria retained below for record; the decision is final unless the trigger conditions in ADR-0010's Consequences section occur.
 
 ### Options
 
@@ -33,7 +35,7 @@ AuthN only — see [authorization.md](authorization.md) for what an authenticate
 ## Requirements
 
 - Secure session handling, no plaintext credential storage.
-- Account verification via email (see [integration-map.md](../02-architecture/integration-map.md) for the email provider dependency).
+- Account verification via email (see [integration-map.md](../02-architecture/integration-map.md) for the email provider dependency) — `[PLANNED]`, not part of Phase 0 (register/login/refresh/logout only; no email provider wired up yet).
 
 ## Related documentation
 

@@ -1,0 +1,39 @@
+# iNOVA — see docs/12-security/secrets.md: never commit real secrets or .env files.
+
+# --- Secrets / environment ---
+.env
+*.env
+!.env.example
+!backend/.env.example
+
+# --- Backend (Python) ---
+backend/.venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+backend/.pytest_cache/
+backend/*.egg-info/
+backend/build/
+backend/dist/
+
+# --- Frontend (Flutter/Dart) ---
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/build/
+frontend/.pub-cache/
+frontend/.pub/
+frontend/coverage/
+frontend/*.iml
+frontend/android/local.properties
+frontend/ios/Flutter/flutter_export_environment.sh
+frontend/web/.last_build_id
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+
+# --- Logs ---
+*.log

@@ -1,6 +1,6 @@
 # Migrations
 
-**Status:** [PLANNED] — no migration tool configured yet
+**Status:** [IN PROGRESS] — Alembic decided ([ADR-0011](../adr/0011-alembic-migrations.md)), first migration being written in Phase 0
 **Owner:** Archange Elie Yatte
 **Last Updated:** 2026-08-08
 
@@ -12,9 +12,11 @@ Define how schema changes will be tracked once implementation starts.
 
 Migration process/tooling.
 
-## Approach
+## Approach — decided
 
-`TODO — decision required`. Whichever is chosen: migrations are the only way schema changes happen — no manual production schema edits.
+Alembic, paired with SQLAlchemy as the ORM. See [ADR-0011](../adr/0011-alembic-migrations.md) for the full rationale. Migrations are the only way schema changes happen — no manual production schema edits.
+
+Options and criteria retained below for record.
 
 ### Options
 

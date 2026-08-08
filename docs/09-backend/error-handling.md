@@ -1,6 +1,6 @@
 # Error Handling
 
-**Status:** [PLANNED]
+**Status:** [IMPLEMENTED] — envelope decided and wired up in Phase 0 (`app/core/errors.py`)
 **Owner:** Archange Elie Yatte
 **Last Updated:** 2026-08-08
 
@@ -17,9 +17,9 @@ Backend error responses. Agent-specific failure handling is in [07-agents/agent-
 - Never leak internal stack traces or secrets in error responses.
 - Distinguish user-actionable errors (bad input, permission denied) from system errors (upstream service down) so the frontend/mascot can react appropriately (e.g. `warning` vs `error` state — see [05-mascot/state-machine.md](../05-mascot/state-machine.md)).
 
-## Error envelope format
+## Error envelope format — decided
 
-`TODO — decision required` on exact shape.
+`{ "error": { "code": "...", "message": "...", "details": null } }` on every non-2xx response, implemented via a global exception handler (`APIError` + a catch-all handler for unexpected exceptions) rather than FastAPI's default `{"detail": ...}` shape — see criteria below, "Consistency with FastAPI defaults." This was resolved directly (no separate ADR) since it is a reversible implementation convention, not a hard-to-reverse architectural choice per [02-architecture/architecture-decisions.md](../02-architecture/architecture-decisions.md)'s ADR bar.
 
 ### Options
 

@@ -1,6 +1,6 @@
 # Ollama
 
-**Status:** [PLANNED]
+**Status:** [IMPLEMENTED] — `OllamaProvider` wired up in Phase 0 backend scaffold
 **Owner:** Archange Elie Yatte
 **Last Updated:** 2026-08-08
 
@@ -10,7 +10,7 @@ Document the current concrete LLM runtime.
 
 ## Scope
 
-Ollama-specific setup and operational notes. See [adr/0005-ollama-local-llm.md](../adr/0005-ollama-local-llm.md) for the decision rationale.
+Ollama-specific setup and operational notes. See [adr/0005-ollama-local-llm.md](../adr/0005-ollama-local-llm.md) for the decision rationale (including its 2026-08-08 addendum).
 
 ## Current configuration
 
@@ -18,7 +18,8 @@ Ollama-specific setup and operational notes. See [adr/0005-ollama-local-llm.md](
 |---|---|
 | Runtime | Ollama |
 | Hardware | GPU with ~4GB VRAM |
-| Starting model | `qwen2.5:3b-instruct-q4_K_M` |
+| Model actually configured (`OLLAMA_MODEL` default) | `qwen2.5-coder:3b` — see [ADR-0005 addendum](../adr/0005-ollama-local-llm.md#addendum--2026-08-08-phase-0-implementation): the originally documented tag was impractically slow to pull in the real dev environment (~200KB/s, ~2.5h), and `qwen2.5-coder:3b` was already available with an equivalent size/quantization/VRAM footprint and Ollama `tools` capability |
+| Originally documented starting model | `qwen2.5:3b-instruct-q4_K_M` — still the target once pulled; swappable via env var, no code change |
 | Fallback/upgrade model | `qwen2.5:7b-instruct-q4_K_M` (partial CPU offload expected) |
 
 ## Why Qwen2.5 at this size

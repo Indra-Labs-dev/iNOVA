@@ -21,6 +21,8 @@ Index every ADR for iNOVA. See [02-architecture/architecture-decisions.md](../02
 | [0007](0007-agent-permissions.md) | Explicit agent permission model | Accepted |
 | [0008](0008-modular-architecture.md) | Modular architecture over monolithic files/modules | Accepted |
 | [0009](0009-mascot-naming-aira.md) | Mascot naming — Aira | Accepted |
+| [0010](0010-authentication-approach.md) | Authentication — in-house JWT + revocable sessions | Accepted |
+| [0011](0011-alembic-migrations.md) | Database migrations — Alembic | Accepted |
 
 ## Adding a new ADR
 
