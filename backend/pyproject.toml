@@ -27,6 +27,10 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "ollama: requires a real local Ollama instance; skipped by default (see docs/14-testing/agent-tests.md)",
+]
+addopts = "-m 'not ollama'"
 
 [build-system]
 requires = ["setuptools>=68"]

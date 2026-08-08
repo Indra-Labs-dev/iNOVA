@@ -13,6 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.ai.provider import LLMProvider
+from app.ai.types import LLMResponse
 from app.api.deps import get_db, get_llm_provider
 from app.core.database import Base
 from app.main import app
@@ -23,8 +24,8 @@ class FakeLLMProvider(LLMProvider):
 
     model = "fake-model"
 
-    def generate(self, message: str) -> str:
-        return f"echo: {message}"
+    def generate(self, message: str, tools=None) -> LLMResponse:
+        return LLMResponse(content=f"echo: {message}", tool_call=None)
 
 
 @pytest.fixture()

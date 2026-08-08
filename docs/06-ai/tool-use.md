@@ -1,6 +1,6 @@
 # Tool Use
 
-**Status:** [PLANNED]
+**Status:** [PARTIAL] — mechanical contract implemented and measured (Gate 1); no agent consumes it yet
 **Owner:** Archange Elie Yatte
 **Last Updated:** 2026-08-08
 
@@ -19,12 +19,20 @@ Tool-calling contract. Permission enforcement is documented in [07-agents/permis
 3. An invalid or malformed tool call is rejected and logged — never partially executed, never silently corrected by guessing intent.
 4. A valid tool call still passes through the permission check and confirmation gate defined in [07-agents/permissions.md](../07-agents/permissions.md) before execution.
 
-## Reliability note
+## Reliability — measured, not assumed (Gate 1)
 
-Given the current small local model ([model-strategy.md](model-strategy.md)), expect a higher rate of malformed/hallucinated tool calls than with a frontier model. Step 3 above is therefore not optional hardening — it is load-bearing for MVP correctness, not just security.
+The reliability note below was a prediction; it has now been tested against real Ollama calls with `qwen2.5-coder:3b` — see [ADR-0012](../adr/0012-tool-calling-contract.md) for the full experiment and data. Headline results:
+
+- 100% reliable (format, tool name, argument) when the request clearly matches the one offered tool and its argument is explicit in the user's message.
+- 100% tool-name hallucination when no offered tool actually matches the request — the model invents a plausible tool name rather than declining.
+- The model never uses Ollama's native structured `tool_calls` response field — every proposal must be parsed from free-text `content`, including handling markdown code fences and outright malformed JSON.
+
+Step 3 above (validate before anything else happens) is therefore not optional hardening — this experiment is direct evidence it is load-bearing: it is what turns 100% hallucination-on-mismatch into zero actual risk, since a proposal naming an unregistered tool is simply rejected. See [tool_call_parsing.py](../../backend/app/ai/tool_call_parsing.py) (discriminated outcomes: `VALID`/`MALFORMED`/`UNKNOWN_TOOL`/`INVALID_ARGUMENTS`/`NO_TOOL_CALL`) for the implementation this maps to.
 
 ## Related documentation
 
+- [LLMProvider](llm-provider.md)
 - [Model strategy](model-strategy.md)
 - [Agent permissions](../07-agents/permissions.md)
 - [Agent security](../12-security/agent-security.md)
+- [ADR-0012: Tool-calling contract](../adr/0012-tool-calling-contract.md)

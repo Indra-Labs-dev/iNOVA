@@ -3,10 +3,18 @@
 See docs/06-ai/ollama.md for the model/tag actually configured in this
 environment, and docs/adr/0005-ollama-local-llm.md for the decision + its
 2026-08-08 addendum explaining the tag substitution.
+
+Tool-calling note (docs/adr/0012-tool-calling-contract.md): qwen2.5-coder:3b
+never populates Ollama's native `message.tool_calls` field in practice — it
+emits a tool-call proposal as JSON text in `message.content` (sometimes
+markdown-fenced). This provider is the ONLY place that knows this — see
+`app/ai/tool_call_parsing.py` for the text-parsing logic it delegates to.
 """
 import httpx
 
 from app.ai.provider import LLMProvider
+from app.ai.tool_call_parsing import ToolCallOutcome, parse_tool_response
+from app.ai.types import LLMResponse, ToolDefinition
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -14,6 +22,17 @@ settings = get_settings()
 
 class OllamaError(Exception):
     """Raised when Ollama is unreachable or returns an unexpected response."""
+
+
+def _to_ollama_tool(tool: ToolDefinition) -> dict:
+    return {
+        "type": "function",
+        "function": {
+            "name": tool.name,
+            "description": tool.description,
+            "parameters": tool.input_schema,
+        },
+    }
 
 
 class OllamaProvider(LLMProvider):
@@ -27,15 +46,19 @@ class OllamaProvider(LLMProvider):
         self._model = model or settings.ollama_model
         self._timeout = timeout_seconds or settings.ollama_request_timeout_seconds
 
-    def generate(self, message: str) -> str:
+    def generate(self, message: str, tools: list[ToolDefinition] | None = None) -> LLMResponse:
+        payload = {
+            "model": self._model,
+            "messages": [{"role": "user", "content": message}],
+            "stream": False,
+        }
+        if tools:
+            payload["tools"] = [_to_ollama_tool(t) for t in tools]
+
         try:
             response = httpx.post(
                 f"{self._base_url}/api/chat",
-                json={
-                    "model": self._model,
-                    "messages": [{"role": "user", "content": message}],
-                    "stream": False,
-                },
+                json=payload,
                 timeout=self._timeout,
             )
             response.raise_for_status()
@@ -44,9 +67,23 @@ class OllamaProvider(LLMProvider):
 
         data = response.json()
         try:
-            return data["message"]["content"]
+            raw_content = data["message"]["content"]
         except (KeyError, TypeError) as exc:
             raise OllamaError(f"Unexpected Ollama response shape: {data}") from exc
+
+        if not tools:
+            return LLMResponse(content=raw_content, tool_call=None)
+
+        parsed = parse_tool_response(raw_content, tools)
+        if parsed.outcome == ToolCallOutcome.VALID:
+            return LLMResponse(content=None, tool_call=parsed.tool_call)
+        # Anything not cleanly VALID (malformed/unknown tool/invalid args/no
+        # tool call) surfaces as plain content — the caller decides what to
+        # do with text that doesn't look like a sensible answer. This is a
+        # deliberate Gate 1 simplification: see docs/adr/0012 for why the
+        # discriminated outcome (available via parse_tool_response directly)
+        # isn't yet threaded through LLMResponse itself.
+        return LLMResponse(content=raw_content, tool_call=None)
 
     @property
     def model(self) -> str:

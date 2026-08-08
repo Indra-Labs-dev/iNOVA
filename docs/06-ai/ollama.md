@@ -32,8 +32,19 @@ Qwen2.5 is natively trained for tool-use, which matters more than raw fluency fo
 - No per-token billing; cost is electricity + development iteration time (see [iNOVA_CAHIER_DES_CHARGES.md §5.1bis](../../iNOVA_CAHIER_DES_CHARGES.md)).
 - Setup steps belong in [15-development/setup.md](../15-development/setup.md) once the backend exists to configure against it.
 
+## Tool-calling behavior (measured, Gate 1)
+
+`qwen2.5-coder:3b` advertises `tools` in `ollama list`'s capability tag, but in practice, against this local Ollama build:
+
+- It **never** populates Ollama's native `message.tool_calls` response field — a tool-call proposal always arrives as JSON text inside `message.content`, sometimes markdown-fenced (` ```json ... ``` `).
+- It is fully reliable for a request that clearly matches the one tool offered with an explicit argument, and fully unreliable (invents a tool name) when no offered tool actually matches the request.
+
+`OllamaProvider` accounts for both — see [ADR-0012](../adr/0012-tool-calling-contract.md) for the full experiment, data, and consequences.
+
 ## Related documentation
 
 - [LLMProvider](llm-provider.md)
+- [Tool use](tool-use.md)
 - [Model strategy](model-strategy.md)
 - [ADR-0005](../adr/0005-ollama-local-llm.md)
+- [ADR-0012: Tool-calling contract](../adr/0012-tool-calling-contract.md)

@@ -1,18 +1,24 @@
 """AIService — the only entry point features/API routes use to talk to AI Core.
 
 Depends on the LLMProvider abstraction, never a concrete provider (see
-docs/06-ai/llm-provider.md). Phase 0 has no memory, no tool use, no Agent
-Router — see docs/16-roadmap/mvp.md for what's deliberately deferred.
+docs/06-ai/llm-provider.md). Still no memory, no Agent Router — see
+docs/16-roadmap/mvp.md for what's deliberately deferred. Tool-calling
+(Gate 1, docs/adr/0012-tool-calling-contract.md) is now supported through
+`generate()`, but no agent built on top of it yet.
 """
 from app.ai.provider import LLMProvider
+from app.ai.types import LLMResponse, ToolDefinition
 
 
 class AIService:
     def __init__(self, provider: LLMProvider):
         self._provider = provider
 
+    def generate(self, message: str, tools: list[ToolDefinition] | None = None) -> LLMResponse:
+        return self._provider.generate(message, tools=tools)
+
     def chat(self, message: str) -> str:
-        return self._provider.generate(message)
+        return self.generate(message).content or ""
 
     @property
     def model_name(self) -> str:

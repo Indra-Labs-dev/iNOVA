@@ -1,6 +1,6 @@
 # iNOVA — Project Status
 
-**Last Updated:** 2026-08-08 (Phase 0 Foundation)
+**Last Updated:** 2026-08-08 (Phase 1 Gate 1 — tool-calling reliability)
 **Owner:** Archange Elie Yatte
 
 ## Purpose
@@ -29,9 +29,10 @@ DEPRECATED    — was built, now retired
 | 3D World (Three.js) | NOT STARTED | Phase 3 — deliberately not started in Phase 0. |
 | Mascot (Aira/Rive) | NOT STARTED | Name confirmed ([ADR-0009](adr/0009-mascot-naming-aira.md)); a static placeholder widget exists in the Flutter shell (`AiraPlaceholder`), but no Rive integration — that's Phase 2. |
 | Backend (FastAPI) | TESTED | `GET /health`, `POST/GET /auth/{register,login,refresh,logout,me}`, `POST /ai/chat`. 19/19 tests pass (SQLite + fakes, no external dependency). Manually verified end-to-end against real PostgreSQL and real Ollama. |
-| AI Core / LLMProvider | TESTED | `LLMProvider` abstract interface + `OllamaProvider` + `AIService`, unit-tested with a fake provider and with `respx`-mocked HTTP. Verified against a real local Ollama instance (see model note below). No memory, no tools, no Agent Router — deliberately out of Phase 0 scope. |
+| AI Core / LLMProvider | TESTED | `LLMProvider` abstract interface + `OllamaProvider` + `AIService`, unit-tested with a fake provider and with `respx`-mocked HTTP. Verified against a real local Ollama instance. Tool-calling contract (`generate(message, tools?) -> LLMResponse`) implemented and measured for reliability — see [ADR-0012](adr/0012-tool-calling-contract.md). Still no memory, no Agent Router, no real agent consuming it yet. |
 | Authentication | TESTED | In-house JWT + revocable refresh sessions ([ADR-0010](adr/0010-authentication-approach.md)). Register/login/refresh-rotation/logout/`me` all covered by tests and verified live. Email verification and MFA remain `[PLANNED]`. |
-| Agents (all 9) | NOT STARTED | Phase 4+ — deliberately out of Phase 0 scope. |
+| Tool-calling (Gate 1) | TESTED | `read_rss_feed`-shaped synthetic tool tested against real `qwen2.5-coder:3b` — 100% reliable when the request clearly matches the offered tool with an explicit argument; hallucinates tool names otherwise (mitigated by mandatory backend validation). See [ADR-0012](adr/0012-tool-calling-contract.md). No ResearchAgent, Tool Registry, or AuditLog built yet — that's Gate 2, pending go-ahead. |
+| Agents (all 9) | NOT STARTED | Phase 4+ — deliberately out of Phase 0/Gate 1 scope. |
 | Cybersecurity Hub | NOT STARTED | Phase 6. |
 | Programming Hub | NOT STARTED | Phase 6. |
 | News Intelligence | NOT STARTED | Phase 5 (MVP slice planned, not started). |
@@ -55,7 +56,7 @@ DEPRECATED    — was built, now retired
 - `backend/` — FastAPI application (see `backend/README.md` for setup).
 - `frontend/` — Flutter application (see `frontend/README.md` for setup).
 - `docker-compose.yml` — PostgreSQL for local development.
-- `logo.png`, `mascotte-aira.png` — brand/concept assets.
+- `logo.png`, `mascotte-aira.png` — brand/concept assets (also bundled in `frontend/assets/images/`, used by the Flutter shell).
 - `README.md` — project entry point with author/project/AI companion attribution.
 
 ## Decisions locked in
@@ -71,6 +72,7 @@ DEPRECATED    — was built, now retired
 - Mascot naming: **iNOVA** (product) / **Aira** (mascot) ([ADR-0009](adr/0009-mascot-naming-aira.md)) — reflected in code and docs.
 - Authentication: in-house JWT + revocable sessions ([ADR-0010](adr/0010-authentication-approach.md)) — **implemented**.
 - DB migrations: Alembic ([ADR-0011](adr/0011-alembic-migrations.md)) — **implemented**.
+- Tool-calling contract + strategy (native, strictly validated) ([ADR-0012](adr/0012-tool-calling-contract.md)) — **implemented and measured**.
 
 ## Known gaps / deliberately deferred
 
@@ -82,7 +84,7 @@ DEPRECATED    — was built, now retired
 
 ## Recommended next step
 
-Phase 0's success criteria are met (see [ARCHITECTURE_FREEZE.md §6](ARCHITECTURE_FREEZE.md)). Next: pick up an MVP-scope vertical (e.g. `ResearchAgent`, per [16-roadmap/mvp.md](16-roadmap/mvp.md)) rather than expanding Foundation further — see [16-roadmap/phases.md](16-roadmap/phases.md) Phase 4.
+Phase 0's success criteria are met (see [ARCHITECTURE_FREEZE.md §6](ARCHITECTURE_FREEZE.md)). Phase 1 Gate 1 (tool-calling reliability) is complete — see [ADR-0012](adr/0012-tool-calling-contract.md) — with a NATIVE TOOL CALLING recommendation for the narrow `ResearchAgent` scope. Pending explicit go-ahead: Gate 2 = `AuditLog` + static Tool Registry + real `read_rss_feed` (with an RSS allowlist) + `ResearchAgent` itself, per the Phase 1 plan.
 
 ## Related documentation
 
