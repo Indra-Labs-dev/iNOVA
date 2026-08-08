@@ -2,8 +2,20 @@ from app.models.audit_log import AuditLog
 from app.models.conversation import Conversation
 from app.models.message import Message
 from app.models.mission import Mission
+from app.models.news_item import NewsItem
 from app.models.session import Session
+from app.models.source import Source
 from app.models.user import User
 from app.models.user_progress import UserProgress
 
-__all__ = ["User", "Session", "AuditLog", "Mission", "UserProgress", "Conversation", "Message"]
+__all__ = [
+    "User",
+    "Session",
+    "AuditLog",
+    "Mission",
+    "UserProgress",
+    "Conversation",
+    "Message",
+    "Source",
+    "NewsItem",
+]
