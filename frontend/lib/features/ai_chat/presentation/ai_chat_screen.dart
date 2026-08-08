@@ -27,7 +27,10 @@ class AiChatScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.research),
-            child: const Text('ResearchAgent →'),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Text('ResearchAgent'), SizedBox(width: 4), Icon(Icons.arrow_forward, size: 16)],
+            ),
           ),
         ],
       ),
@@ -197,7 +200,7 @@ class _MessageList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state.status == ChatStatus.loading) {
-      return const Center(child: Text('Loading your conversation…'));
+      return const Center(child: Text('Loading your conversation...'));
     }
     if (state.messages.isEmpty) {
       return const Center(child: Text('Say hello to Aira.'));
@@ -251,7 +254,7 @@ class _ThinkingBubble extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: INovaSpacing.xs),
-        child: Text('Aira is thinking…', style: TextStyle(fontStyle: FontStyle.italic)),
+        child: Text('Aira is thinking...', style: TextStyle(fontStyle: FontStyle.italic)),
       ),
     );
   }
@@ -275,7 +278,7 @@ class _InputRow extends StatelessWidget {
             child: TextField(
               controller: controller,
               enabled: !sending,
-              decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Message Aira…'),
+              decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Message Aira...'),
               onSubmitted: (_) => onSend(),
             ),
           ),

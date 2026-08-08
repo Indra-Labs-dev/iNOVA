@@ -128,7 +128,7 @@ access — proven against both the dev server and a served `--release` build, ac
 navigate-away/navigate-back and reload cycles, with no console errors and no shipped feature
 touched.
 
-### One mandatory, honestly-flagged prerequisite — not a Three.js problem
+### One mandatory, honestly-flagged prerequisite — not a Three.js problem — CLOSED in Gate 7 (2026-08-08)
 
 The `--release` build currently fetches CanvasKit and a Roboto font from `gstatic.com` by
 Flutter's own default, unrelated to this spike's architecture. This does not fail the spike's
@@ -138,6 +138,21 @@ before or as the first step of Gate 7, since it affects the real app's release b
 just the 3D layer. It was not fixed inside Gate 6 because doing so requires editing a
 project-root file shared with the already-shipped app, which the Gate 6 isolation mandate
 explicitly excluded.
+
+**Update — Gate 7, 2026-08-08:** fixed. `frontend/web/flutter_bootstrap.js` now sets
+`canvasKitBaseUrl: "canvaskit/"`, pointing the loader at the CanvasKit build `flutter build web`
+already copies into `build/web/canvaskit/` — no download needed, since the Flutter SDK ships
+that build itself. Roboto is now a real vendored Flutter font asset
+(`frontend/fonts/roboto/`, official `google/fonts` repo, OFL 1.1, see that directory's
+`PROVENANCE.md`), closing the base-text CDN fetch. A second, initially-unnoticed CDN fetch
+(Noto Sans Symbols, for the `→`/`…`/`•` glyphs used in 4 already-shipped screens' UI copy,
+which fall outside Roboto's own glyph coverage) was found in the same investigation and closed
+by replacing those glyphs with a local `Icon`/ASCII in Research, Missions, News, and AI Chat.
+Verified against a fresh `--release` build: `performance.getEntriesByType('resource')` reports
+zero external requests on every screen checked. `flutter analyze` clean, 21/21 tests still pass.
+One residual, documented risk remains: CanvasKit's `fontFallbackBaseUrl` still defaults to
+`fonts.gstatic.com` for any *future* glyph outside Roboto's coverage — see
+[PROJECT_STATUS.md](../PROJECT_STATUS.md) "Known gaps". Full detail in the Gate 7 commit(s).
 
 No ADR was created for 3D architecture in Gate 6, per the explicit instruction that the
 definitive architectural choice should wait until after measurement and before real 3D World

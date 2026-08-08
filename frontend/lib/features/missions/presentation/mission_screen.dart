@@ -88,7 +88,10 @@ class _MissionFormState extends ConsumerState<_MissionForm> {
         const SizedBox(height: INovaSpacing.lg),
         TextButton(
           onPressed: () => Navigator.pushNamed(context, AppRoutes.news),
-          child: const Text('News Digest →'),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [Text('News Digest'), SizedBox(width: 4), Icon(Icons.arrow_forward, size: 16)],
+          ),
         ),
       ],
     );
@@ -106,7 +109,7 @@ class _MissionResultArea extends StatelessWidget {
       case MissionScreenStatus.idle:
         return const SizedBox.shrink();
       case MissionScreenStatus.loading:
-        return const Text('Aira is working on it…');
+        return const Text('Aira is working on it...');
       case MissionScreenStatus.error:
         return Text(
           state.errorMessage ?? 'Something went wrong.',

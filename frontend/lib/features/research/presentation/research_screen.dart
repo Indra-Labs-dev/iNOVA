@@ -128,7 +128,7 @@ class _ResearchFormState extends ConsumerState<_ResearchForm> {
       children: [
         TextField(
           controller: _query,
-          decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Ask a research question…'),
+          decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Ask a research question...'),
         ),
         const SizedBox(height: INovaSpacing.md),
         PrimaryButton(
@@ -146,7 +146,10 @@ class _ResearchFormState extends ConsumerState<_ResearchForm> {
         const SizedBox(height: INovaSpacing.lg),
         TextButton(
           onPressed: () => Navigator.pushNamed(context, AppRoutes.missions),
-          child: const Text('Try a Mission →'),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [Text('Try a Mission'), SizedBox(width: 4), Icon(Icons.arrow_forward, size: 16)],
+          ),
         ),
       ],
     );
@@ -164,7 +167,7 @@ class _ResultArea extends StatelessWidget {
       case ResearchStatus.idle:
         return const SizedBox.shrink();
       case ResearchStatus.loading:
-        return const Text('Aira is researching…');
+        return const Text('Aira is researching...');
       case ResearchStatus.error:
         return Text(
           state.errorMessage ?? 'Something went wrong.',
@@ -182,7 +185,7 @@ class _ResultArea extends StatelessWidget {
               for (final source in result.sources)
                 Padding(
                   padding: const EdgeInsets.only(top: INovaSpacing.xs),
-                  child: Text('• ${source.title}', style: const TextStyle(fontSize: 13)),
+                  child: Text('- ${source.title}', style: const TextStyle(fontSize: 13)),
                 ),
             ],
           ],

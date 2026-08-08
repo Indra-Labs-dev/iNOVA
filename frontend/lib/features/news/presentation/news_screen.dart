@@ -88,7 +88,7 @@ class _DigestList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state.status == NewsScreenStatus.loading) {
-      return const Center(child: Text('Loading the digest…'));
+      return const Center(child: Text('Loading the digest...'));
     }
     if (state.status == NewsScreenStatus.error) {
       return Center(
@@ -131,7 +131,7 @@ class _NewsCard extends StatelessWidget {
           Text(item.title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: INovaSpacing.xs),
           Text(
-            [item.sourceName, if (item.publishedAt != null) _formatDate(item.publishedAt!)].join(' • '),
+            [item.sourceName, if (item.publishedAt != null) _formatDate(item.publishedAt!)].join(' - '),
             style: const TextStyle(fontSize: 12, color: Colors.white70),
           ),
           if (item.excerpt != null && item.excerpt!.isNotEmpty) ...[

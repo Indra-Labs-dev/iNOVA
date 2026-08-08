@@ -1,6 +1,6 @@
 # iNOVA — Project Status
 
-**Last Updated:** 2026-08-08 (Gate 6 — 3D World Feasibility Spike)
+**Last Updated:** 2026-08-08 (Gate 7 — CanvasKit/Font CDN fix, step 1 of the first real 3D increment)
 **Owner:** Archange Elie Yatte
 
 ## Purpose
@@ -25,7 +25,7 @@ DEPRECATED    — was built, now retired
 | Module | Status | Notes |
 |---|---|---|
 | Documentation (`docs/`) | IN PROGRESS | 165+ files; reviewed and audited 2026-08-08 — see [ARCHITECTURE_FREEZE.md](ARCHITECTURE_FREEZE.md). |
-| Frontend (Flutter shell) | TESTED | Riverpod, minimal routing (4 routes), dark theme, `AiChatScreen` (Gate 4: real multi-turn chat, server-persisted history) + `ResearchScreen` (Gate 2) + `MissionScreen` (Gate 3, "Mission complete +X XP" or real failure reason) + `NewsScreen` (Gate 5: extractive digest, no AI summary rendered). 21/21 tests pass, `flutter analyze` clean, manually verified in a real browser against the real backend for all four screens, including a real reload + re-login round trip for chat history and a real digest refresh against the live public RSS feeds. |
+| Frontend (Flutter shell) | TESTED | Riverpod, minimal routing (4 routes), dark theme, `AiChatScreen` (Gate 4: real multi-turn chat, server-persisted history) + `ResearchScreen` (Gate 2) + `MissionScreen` (Gate 3, "Mission complete +X XP" or real failure reason) + `NewsScreen` (Gate 5: extractive digest, no AI summary rendered). 21/21 tests pass, `flutter analyze` clean, manually verified in a real browser against the real backend for all four screens, including a real reload + re-login round trip for chat history and a real digest refresh against the live public RSS feeds. Gate 7: `--release` build now loads CanvasKit and its default font (Roboto, vendored) fully locally — verified zero external network requests via `performance.getEntriesByType('resource')`. |
 | 3D World (Three.js) | NOT STARTED | Phase 3. Gate 6 (2026-08-08) ran an isolated, deletable feasibility spike, not the real 3D World: measured that Flutter Web can host and drive Three.js/WebGL with reliable bidirectional communication via native `dart:js_interop` + vendored (MIT, npm-sourced) Three.js, no CDN for the 3D engine, verified against a real `--release` build — verdict READY for that question. Also found, separately, that Flutter's default release build fetches CanvasKit/fonts from `gstatic.com`, which must be fixed (shared `web/flutter_bootstrap.js` override) before real 3D work begins. See [Gate 6 report](16-roadmap/gate-6-3d-spike-report.md). Spike code lives at `frontend/lib/spike_3d/`, `frontend/web/spike3d/` — fully separate from this row's "not started" real implementation. |
 | Mascot (Aira/Rive) | NOT STARTED | Name confirmed ([ADR-0009](adr/0009-mascot-naming-aira.md)); static placeholder only (`AiraPlaceholder`, real concept art) — no Rive integration, that's Phase 2. Blocked on a real `.riv` asset (Rive's editor is an external design tool, not something a coding Gate can author) — see the Gate 5 proposal's alternatives comparison for why News Intelligence was prioritized instead. |
 | Backend (FastAPI) | TESTED | `GET /health`, `POST/GET /auth/*`, `POST /ai/chat` (deprecated, kept working), `POST /agents/research`, `POST /missions`, `POST/GET /conversations`, `POST/GET .../messages`, `DELETE /conversations/{id}`, `POST /news/refresh`, `GET /news`. 148/148 default tests pass (SQLite + fakes) + 6/6 real-Ollama-marked tests. Verified end-to-end against real PostgreSQL and real Ollama, including through the actual Flutter UI, for `/agents/research`, `/missions`, `/conversations`, and (Postgres + real public RSS feeds, no Ollama involved) `/news`. |
@@ -95,22 +95,24 @@ DEPRECATED    — was built, now retired
 - `POST /api/v1/ai/chat` is now deprecated (`deprecated=True`, unused by the frontend since Gate 4) but kept working rather than removed — see [09-backend/api-design.md](09-backend/api-design.md).
 - AI summarization for News Intelligence is deliberately deferred, not implemented — see [ADR-0014](adr/0014-defer-ai-summarization.md). The digest shows the source's own RSS text (title/excerpt), never AI-generated text. No scheduler/Celery/Redis/RQ was introduced for News ingestion — refresh stays synchronous, triggered only by `POST /news/refresh`, per the explicit Gate 5 GO.
 - News Intelligence's `Source` catalog is exactly the 2 feeds already allowlisted for `read_rss_feed` (`python_blog`, `github_blog`) — expanding it requires a code change + review (migration), same posture as the tool allowlist, never a runtime/API action.
-- Flutter's default web release build fetches CanvasKit and a Roboto font from `gstatic.com` (Flutter platform default, unrelated to Three.js) — discovered during the Gate 6 spike's production-build verification, not yet fixed because the fix (`web/flutter_bootstrap.js`) is a shared, whole-app file out of that spike's isolated scope. See [Gate 6 report](16-roadmap/gate-6-3d-spike-report.md) §5.
+- ~~Flutter's default web release build fetches CanvasKit and a Roboto font from `gstatic.com`~~ — **fixed in Gate 7** (2026-08-08): `frontend/web/flutter_bootstrap.js` now points `canvasKitBaseUrl` at the locally-bundled CanvasKit build (no code change needed — `flutter build web` already copies it into `build/web/canvaskit/`); Roboto is vendored as a real Flutter font asset (`frontend/fonts/roboto/`, OFL 1.1, see `PROVENANCE.md`); the `→`/`…`/`•` glyphs that triggered a second CDN fetch (Noto Sans Symbols, for glyphs outside Roboto's coverage) were replaced with a local `Icon`/ASCII in the 4 screens that used them (Research, Missions, News, AI Chat). Verified against a real `--release` build: `performance.getEntriesByType('resource')` shows zero external requests. Residual, documented risk: CanvasKit's `fontFallbackBaseUrl` still defaults to `fonts.gstatic.com` for any *future* glyph outside Roboto's coverage (e.g. emoji, CJK) — avoid introducing new non-Latin UI glyphs without checking coverage first, or vendor an explicit fallback font before doing so.
 - Gate 6's 3D spike (`frontend/lib/spike_3d/`, `frontend/web/spike3d/`) is a deletable feasibility exercise, not the real 3D World — no ADR was written for 3D architecture yet, per explicit instruction to wait until after measurement and before real 3D World implementation.
 
 ## Recommended next step
 
-Gate 6 is complete: an isolated feasibility spike measured that Flutter Web can host and drive
-Three.js/WebGL with reliable bidirectional communication, fully locally (vendored Three.js, no
-CDN for the engine), verified against both dev mode and a real `--release` build — verdict
-READY for that question. A separate, real finding (Flutter's own CanvasKit/font CDN default in
-release builds) was measured, documented, and deliberately left unresolved inside the spike
-because fixing it touches a file shared with the already-shipped app. See the
-[Gate 6 report](16-roadmap/gate-6-3d-spike-report.md) for full measurements and the Gate 7
-proposal (first real 3D World increment). Per the gated plan, do not start Gate 7 or any other
-next vertical (durable cross-conversation memory, Agent Router, Cybersecurity Hub, richer
-gamification, Aira's visual/Rive layer, revisiting AI summarization) without an explicit
-go-ahead.
+Gate 6 (isolated feasibility spike) measured that Flutter Web can host and drive Three.js/WebGL
+with reliable bidirectional communication, fully locally (vendored Three.js, no CDN for the
+engine), verified against both dev mode and a real `--release` build — verdict READY. It also
+found a separate, real issue: Flutter's own CanvasKit/font CDN default in release builds,
+deliberately left unresolved inside the spike because fixing it touches a file shared with the
+already-shipped app. Gate 7 (2026-08-08) closed that prerequisite for real — see [Gate 6
+report](16-roadmap/gate-6-3d-spike-report.md) for the original finding and the "Known gaps"
+entry above for the fix and its one remaining, documented residual risk (future non-Latin
+glyphs). The rest of the Gate 6 report's Gate 7 proposal (the first real 3D World scene wired
+into the actual app, plus a real bridge-triggered navigation event) has not been started. Per
+the gated plan, do not continue Gate 7 or start any other next vertical (durable
+cross-conversation memory, Agent Router, Cybersecurity Hub, richer gamification, Aira's
+visual/Rive layer, revisiting AI summarization) without an explicit go-ahead.
 
 ## Related documentation
 
