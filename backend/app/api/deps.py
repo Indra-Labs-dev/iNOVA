@@ -22,11 +22,14 @@ from app.repositories.audit_log_repository import AuditLogRepository
 from app.repositories.conversation_repository import ConversationRepository
 from app.repositories.message_repository import MessageRepository
 from app.repositories.mission_repository import MissionRepository
+from app.repositories.news_item_repository import NewsItemRepository
+from app.repositories.source_repository import SourceRepository
 from app.repositories.user_progress_repository import UserProgressRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
 from app.services.conversation_service import ConversationService
 from app.services.mission_service import MissionService
+from app.services.news_service import NewsService
 from app.tools.registry import ToolRegistry, default_registry
 
 # Ensure built-in tools are registered before anything resolves the registry —
@@ -124,3 +127,18 @@ def get_conversation_service(
 ) -> ConversationService:
     settings = get_settings()
     return ConversationService(ai_service, message_repo, settings.conversation_history_window)
+
+
+def get_source_repository(db: DbSession = Depends(get_db)) -> SourceRepository:
+    return SourceRepository(db)
+
+
+def get_news_item_repository(db: DbSession = Depends(get_db)) -> NewsItemRepository:
+    return NewsItemRepository(db)
+
+
+def get_news_service(
+    source_repo: SourceRepository = Depends(get_source_repository),
+    news_item_repo: NewsItemRepository = Depends(get_news_item_repository),
+) -> NewsService:
+    return NewsService(source_repo, news_item_repo)
