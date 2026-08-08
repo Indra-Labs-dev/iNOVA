@@ -41,12 +41,14 @@ def test_successful_mission_is_completed_and_awards_xp(db_session):
     service, agent = _service(db_session, result)
     user_id = uuid.uuid4()
 
-    mission = service.start("What's new for Python?", user_id=user_id)
+    outcome = service.start("What's new for Python?", user_id=user_id)
+    mission = outcome.mission
 
     assert mission.status == MissionStatus.COMPLETED.value
     assert mission.xp_awarded == MISSION_SUCCESS_XP
     assert mission.failure_reason is None
     assert mission.answer == "Python 3.14 was released."
+    assert outcome.sources[0]["title"] == "Python 3.14 released"
     assert agent.calls[0]["user_id"] == user_id
 
     progress = UserProgressRepository(db_session).get(user_id)
@@ -67,7 +69,7 @@ def test_non_success_outcomes_are_failed_and_award_no_xp(db_session, outcome):
     service, _ = _service(db_session, result)
     user_id = uuid.uuid4()
 
-    mission = service.start("Do something", user_id=user_id)
+    mission = service.start("Do something", user_id=user_id).mission
 
     assert mission.status == MissionStatus.FAILED.value
     assert mission.xp_awarded == 0

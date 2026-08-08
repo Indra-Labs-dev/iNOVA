@@ -8,6 +8,7 @@ permission check happens here; duplicating any of that would violate
 docs/07-agents/agent-security.md's single-source-of-truth principle.
 """
 import uuid
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from app.agents.research_agent import AGENT_NAME, ResearchAgent
@@ -17,6 +18,18 @@ from app.repositories.mission_repository import MissionRepository
 from app.repositories.user_progress_repository import UserProgressRepository
 
 MISSION_SUCCESS_XP = 10
+
+
+@dataclass(frozen=True)
+class MissionOutcome:
+    """Mission + the sources used to complete it. Sources are NOT persisted
+    on the Mission row (keeping the schema minimal, per docs/08-modules/
+    mission-system.md — no over-normalization for a deferred GET endpoint);
+    this is the one place a caller can still see them, right after creation.
+    """
+
+    mission: Mission
+    sources: list[dict] = field(default_factory=list)
 
 
 class MissionService:
@@ -30,7 +43,7 @@ class MissionService:
         self._mission_repo = mission_repo
         self._user_progress_repo = user_progress_repo
 
-    def start(self, goal: str, user_id: uuid.UUID) -> Mission:
+    def start(self, goal: str, user_id: uuid.UUID) -> MissionOutcome:
         """Synchronous end to end (no queue/scheduler at this Gate — see
         docs/08-modules/mission-system.md): by the time this returns, the
         mission is already in its final state. `user_id` always comes from
@@ -52,7 +65,7 @@ class MissionService:
             failure_reason = result.outcome
             xp_awarded = 0
 
-        return self._mission_repo.create(
+        mission = self._mission_repo.create(
             user_id=user_id,
             goal=goal,
             agent_name=AGENT_NAME,
@@ -63,3 +76,4 @@ class MissionService:
             audit_id=result.audit_id,
             completed_at=datetime.now(timezone.utc),
         )
+        return MissionOutcome(mission=mission, sources=result.sources)

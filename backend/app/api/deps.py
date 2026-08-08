@@ -18,8 +18,11 @@ from app.core.errors import APIError
 from app.core.security import decode_access_token
 from app.models.user import User
 from app.repositories.audit_log_repository import AuditLogRepository
+from app.repositories.mission_repository import MissionRepository
+from app.repositories.user_progress_repository import UserProgressRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
+from app.services.mission_service import MissionService
 from app.tools.registry import ToolRegistry, default_registry
 
 # Ensure built-in tools are registered before anything resolves the registry —
@@ -85,3 +88,19 @@ def get_research_agent(
     audit_repo: AuditLogRepository = Depends(get_audit_log_repository),
 ) -> ResearchAgent:
     return ResearchAgent(ai_service, tool_registry, audit_repo)
+
+
+def get_mission_repository(db: DbSession = Depends(get_db)) -> MissionRepository:
+    return MissionRepository(db)
+
+
+def get_user_progress_repository(db: DbSession = Depends(get_db)) -> UserProgressRepository:
+    return UserProgressRepository(db)
+
+
+def get_mission_service(
+    research_agent: ResearchAgent = Depends(get_research_agent),
+    mission_repo: MissionRepository = Depends(get_mission_repository),
+    user_progress_repo: UserProgressRepository = Depends(get_user_progress_repository),
+) -> MissionService:
+    return MissionService(research_agent, mission_repo, user_progress_repo)
