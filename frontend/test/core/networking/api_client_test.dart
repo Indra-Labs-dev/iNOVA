@@ -18,6 +18,38 @@ void main() {
     expect(result['response'], 'hi');
   });
 
+  test('getJson returns a decoded list for list endpoints', () async {
+    final mockClient = MockClient((request) async {
+      expect(request.method, 'GET');
+      return http.Response(jsonEncode([{'id': '1'}, {'id': '2'}]), 200);
+    });
+    final client = ApiClient(httpClient: mockClient, baseUrl: 'http://test');
+
+    final result = await client.getJson('/conversations', authToken: 'tok');
+
+    expect(result, [
+      {'id': '1'},
+      {'id': '2'},
+    ]);
+  });
+
+  test('getJson throws ApiException parsed from the error envelope', () async {
+    final mockClient = MockClient((request) async {
+      return http.Response(
+        jsonEncode({
+          'error': {'code': 'not_authenticated', 'message': 'Missing token.', 'details': null}
+        }),
+        401,
+      );
+    });
+    final client = ApiClient(httpClient: mockClient, baseUrl: 'http://test');
+
+    expect(
+      () => client.getJson('/conversations'),
+      throwsA(isA<ApiException>().having((e) => e.statusCode, 'statusCode', 401)),
+    );
+  });
+
   test('postJson throws ApiException parsed from the error envelope', () async {
     final mockClient = MockClient((request) async {
       return http.Response(

@@ -30,16 +30,30 @@ class ApiClient {
       },
       body: jsonEncode(body),
     );
+    return _decodeObject(response);
+  }
 
-    final decoded = response.body.isEmpty
-        ? <String, dynamic>{}
-        : jsonDecode(response.body) as Map<String, dynamic>;
+  Future<dynamic> getJson(String path, {String? authToken}) async {
+    final response = await _httpClient.get(
+      Uri.parse('$_baseUrl$path'),
+      headers: {if (authToken != null) 'Authorization': 'Bearer $authToken'},
+    );
+    return _decodeAny(response);
+  }
+
+  Map<String, dynamic> _decodeObject(http.Response response) {
+    final decoded = _decodeAny(response);
+    return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+  }
+
+  dynamic _decodeAny(http.Response response) {
+    final decoded = response.body.isEmpty ? null : jsonDecode(response.body);
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return decoded;
+      return decoded ?? <String, dynamic>{};
     }
 
-    final error = decoded['error'] as Map<String, dynamic>?;
+    final error = decoded is Map<String, dynamic> ? decoded['error'] as Map<String, dynamic>? : null;
     throw ApiException(
       statusCode: response.statusCode,
       code: error?['code'] as String? ?? 'unknown_error',
