@@ -13,8 +13,8 @@ markdown-fenced). This provider is the ONLY place that knows this — see
 import httpx
 
 from app.ai.provider import LLMProvider
-from app.ai.tool_call_parsing import ToolCallOutcome, parse_tool_response
-from app.ai.types import LLMResponse, ToolDefinition
+from app.ai.tool_call_parsing import parse_tool_response
+from app.ai.types import LLMResponse, ToolCallOutcome, ToolDefinition
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -46,12 +46,18 @@ class OllamaProvider(LLMProvider):
         self._model = model or settings.ollama_model
         self._timeout = timeout_seconds or settings.ollama_request_timeout_seconds
 
-    def generate(self, message: str, tools: list[ToolDefinition] | None = None) -> LLMResponse:
-        payload = {
-            "model": self._model,
-            "messages": [{"role": "user", "content": message}],
-            "stream": False,
-        }
+    def generate(
+        self,
+        message: str,
+        tools: list[ToolDefinition] | None = None,
+        system: str | None = None,
+    ) -> LLMResponse:
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": message})
+
+        payload = {"model": self._model, "messages": messages, "stream": False}
         if tools:
             payload["tools"] = [_to_ollama_tool(t) for t in tools]
 
@@ -76,14 +82,14 @@ class OllamaProvider(LLMProvider):
 
         parsed = parse_tool_response(raw_content, tools)
         if parsed.outcome == ToolCallOutcome.VALID:
-            return LLMResponse(content=None, tool_call=parsed.tool_call)
+            return LLMResponse(content=None, tool_call=parsed.tool_call, tool_call_outcome=parsed.outcome)
         # Anything not cleanly VALID (malformed/unknown tool/invalid args/no
-        # tool call) surfaces as plain content — the caller decides what to
-        # do with text that doesn't look like a sensible answer. This is a
-        # deliberate Gate 1 simplification: see docs/adr/0012 for why the
-        # discriminated outcome (available via parse_tool_response directly)
-        # isn't yet threaded through LLMResponse itself.
-        return LLMResponse(content=raw_content, tool_call=None)
+        # tool call) still surfaces as plain content for a caller that only
+        # wants text — but `tool_call_outcome` is preserved so a caller that
+        # cares (ResearchAgent, for audit purposes) can tell "the model
+        # tried and failed" apart from "the model genuinely didn't need a
+        # tool" — see docs/adr/0012 and docs/07-agents/audit.md.
+        return LLMResponse(content=raw_content, tool_call=None, tool_call_outcome=parsed.outcome)
 
     @property
     def model(self) -> str:

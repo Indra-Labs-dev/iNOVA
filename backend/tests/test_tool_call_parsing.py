@@ -5,8 +5,8 @@ during the Gate 1 tool-calling experiment (docs/adr/0012-tool-calling-contract.m
 not synthetic examples — this pins down real observed behavior as a
 regression test, not a hypothetical one.
 """
-from app.ai.tool_call_parsing import ToolCallOutcome, parse_tool_response
-from app.ai.types import ToolDefinition
+from app.ai.tool_call_parsing import parse_tool_response
+from app.ai.types import ToolCallOutcome, ToolDefinition
 
 RSS_TOOL = ToolDefinition(
     name="read_rss_feed",
@@ -93,6 +93,26 @@ def test_invalid_arguments_wrong_type():
 def test_arguments_not_an_object_is_invalid():
     content = '{"name": "read_rss_feed", "arguments": "https://example.com/feed.xml"}'
     result = parse_tool_response(content, offered_tools=[RSS_TOOL])
+    assert result.outcome == ToolCallOutcome.INVALID_ARGUMENTS
+
+
+def test_invalid_arguments_value_not_in_enum():
+    # Simulates the read_rss_feed contract: feed_id is constrained to an
+    # allowlist enum, not a free-form URL (see docs/12-security/network-security.md
+    # "SSRF prevention").
+    tool = ToolDefinition(
+        name="read_rss_feed",
+        description="",
+        input_schema={
+            "type": "object",
+            "properties": {"feed_id": {"type": "string", "enum": ["python_blog", "github_blog"]}},
+            "required": ["feed_id"],
+        },
+        permission="research.read",
+        risk="LOW",
+    )
+    content = '{"name": "read_rss_feed", "arguments": {"feed_id": "http://169.254.169.254/latest/meta-data"}}'
+    result = parse_tool_response(content, offered_tools=[tool])
     assert result.outcome == ToolCallOutcome.INVALID_ARGUMENTS
 
 

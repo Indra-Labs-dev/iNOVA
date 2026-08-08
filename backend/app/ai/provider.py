@@ -11,15 +11,24 @@ from app.ai.types import LLMResponse, ToolDefinition
 
 class LLMProvider(ABC):
     @abstractmethod
-    def generate(self, message: str, tools: list[ToolDefinition] | None = None) -> LLMResponse:
+    def generate(
+        self,
+        message: str,
+        tools: list[ToolDefinition] | None = None,
+        system: str | None = None,
+    ) -> LLMResponse:
         """Return a completion, or a tool-call proposal if `tools` were offered
         and the model chose to use one (see docs/06-ai/tool-use.md contract).
 
-        Still deliberately minimal: single message, no conversation history
-        (see docs/16-roadmap/mvp.md). A tool call returned here is a
-        PROPOSAL ONLY — see docs/07-agents/permissions.md: the caller must
-        validate it against the real tool registry/permission model before
-        any execution. This method never grants authority, it only reports
-        what the model said.
+        `system` is an optional system-role instruction — added in Gate 2
+        because the Gate 1 experiment (docs/adr/0012-tool-calling-contract.md)
+        measured it materially reducing tool-name hallucination on
+        out-of-scope requests. Still a single user message, no multi-turn
+        history (see docs/16-roadmap/mvp.md).
+
+        A tool call returned here is a PROPOSAL ONLY — see
+        docs/07-agents/permissions.md: the caller must validate it against
+        the real tool registry/permission model before any execution. This
+        method never grants authority, it only reports what the model said.
         """
         raise NotImplementedError

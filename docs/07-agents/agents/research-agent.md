@@ -1,6 +1,6 @@
 # ResearchAgent
 
-**Status:** [PLANNED] — first agent scheduled for implementation (Phase 4 / MVP)
+**Status:** [TESTED] — implemented (Gate 2), backend unit/integration/security-tested, verified live end to end (real Ollama, real RSS, real PostgreSQL audit). Not yet [STABLE] (no track record over time).
 **Owner:** Archange Elie Yatte
 **Last Updated:** 2026-08-08
 
@@ -22,48 +22,46 @@ A research intent/question, optionally scoped to specific sources or a time rang
 
 A synthesized answer with cited sources, distinguishing fact from inference (see [11-intelligence/source-attribution.md](../../11-intelligence/source-attribution.md)).
 
-## Tools
+## Tools — Gate 2 scope
 
-- `search_public_source` — LOW risk.
-- `fetch_document` — LOW risk (public URLs only).
-- `read_rss_feed` — LOW risk.
-
-Exact tool set to be finalized at implementation time; none currently implemented.
+Only **`read_rss_feed`** is implemented, restricted to a server-side `feed_id` allowlist (never a URL — see [12-security/network-security.md](../../12-security/network-security.md) "SSRF prevention"). `search_public_source` and `fetch_document` remain `[PLANNED]` — each implies a real external API/general fetch capability, which is a new dependency decision not made in Gate 2 (see [16-roadmap/mvp.md](../../16-roadmap/mvp.md): don't build beyond the documented vertical slice).
 
 ## Permissions
 
-`research.read` (proposed scope name — `TODO — decision required` to finalize against [12-security/authorization.md](../../12-security/authorization.md) conventions once written).
+`research.read` — finalized (was `TODO` in earlier drafts). Every authenticated user implicitly holds this scope in Gate 2 (no per-user grant table yet — see [09-backend/authentication.md](../../09-backend/authentication.md) open decisions); the check itself (`app/tools/pipeline.py::authorize_tool_call`) is real and server-side regardless, and is proven to block execution when the scope is absent (see `backend/tests/test_research_agent.py::test_permission_denied_blocks_execution_end_to_end`).
 
 ## Risks
 
-LOW overall — read-only, public-source access only. No permission to write user data or execute code.
+LOW overall — read-only, public-source access only. No permission to write user data or execute code. Implemented tool (`read_rss_feed`) carries `Risk: LOW`, `Confirmation: not required`, matching this fiche exactly.
 
 ## Memory
 
-Session-scoped by default; no persistent memory unless explicitly promoted to [AI memory](../../06-ai/memory.md) by the user or system.
+Session-scoped only, as documented — no persistence across requests. `AIService.generate()` takes a single message per call; no multi-turn history is threaded through `ResearchAgent`.
 
 ## Dependencies
 
-[LLMProvider](../../06-ai/llm-provider.md), [Research & Intelligence Hub](../../08-modules/research-hub.md).
+[LLMProvider](../../06-ai/llm-provider.md) (now supports `tools`/`system`, see [ADR-0012](../../adr/0012-tool-calling-contract.md)), [Tool Registry](../tools.md) ([ADR-0013](../../adr/0013-static-tool-registry.md)), [AuditLog](../audit.md).
 
 ## Events
 
-Publishes `agent.task.succeeded` / `agent.task.failed` (see [event-flow.md](../../02-architecture/event-flow.md)).
+`[PLANNED]` — not wired to the shared event bus yet (see [02-architecture/event-flow.md](../../02-architecture/event-flow.md)); Gate 2 uses direct audit persistence instead, which covers the same "was this action recorded" need without the event bus dependency.
 
 ## Errors
 
-Source unreachable, rate-limited, or against robots.txt → fail cleanly with a clear reason, never silently substitute an unverified answer.
+Source unreachable, timeout, invalid RSS, or HTTP error → `read_rss_feed` returns a bounded, non-crashing failure (see `backend/app/tools/research_tools.py`), recorded as `AuditOutcome.EXECUTION_FAILED`, never silently substituted with an unverified answer.
 
 ## Confirmation
 
-Not required — all tools are LOW risk, read-only, public-source.
+Not required for `read_rss_feed` (LOW risk) — confirmed correct by the fiche. The generic confirmation-gate mechanism (`app/tools/pipeline.py`) is implemented and proven with a synthetic MEDIUM/HIGH test-only tool (never registered in production) — see [ADR-0012](../../adr/0012-tool-calling-contract.md) and `backend/tests/test_authorization_pipeline.py`.
 
 ## Audit
 
-Every source queried and every claim's attribution logged per [audit.md](../audit.md).
+Implemented — every attempt (success, permission denied, invalid tool call, invalid arguments, execution failure) is written to `audit_logs`, verified both in automated tests and against a real PostgreSQL instance during live E2E verification. A genuine "no tool needed" plain-text answer is deliberately NOT audited (it isn't a permissioned action) — see [audit.md](../audit.md).
 
 ## Related documentation
 
 - [Agent architecture](../architecture.md)
 - [Research & Intelligence Hub](../../08-modules/research-hub.md)
 - [Scraping policy](../../11-intelligence/scraping-policy.md)
+- [ADR-0012: Tool-calling contract](../../adr/0012-tool-calling-contract.md)
+- [ADR-0013: Static Tool Registry](../../adr/0013-static-tool-registry.md)

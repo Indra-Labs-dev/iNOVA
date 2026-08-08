@@ -15,10 +15,9 @@ proposal usable.
 import json
 import re
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any
 
-from app.ai.types import ToolCall, ToolDefinition
+from app.ai.types import ToolCall, ToolCallOutcome, ToolDefinition
 
 _FENCE_RE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL)
 
@@ -30,14 +29,6 @@ _JSON_TYPE_MAP: dict[str, type | tuple[type, ...]] = {
     "object": dict,
     "array": list,
 }
-
-
-class ToolCallOutcome(str, Enum):
-    NO_TOOL_CALL = "no_tool_call"
-    VALID = "valid"
-    MALFORMED = "malformed"
-    UNKNOWN_TOOL = "unknown_tool"
-    INVALID_ARGUMENTS = "invalid_arguments"
 
 
 @dataclass(frozen=True)
@@ -75,6 +66,10 @@ def _validate_arguments(arguments: Any, schema: dict[str, Any]) -> str | None:
         expected_type = _JSON_TYPE_MAP.get(prop_schema.get("type", ""))
         if expected_type is not None and not isinstance(value, expected_type):
             return f"argument '{key}' should be of type {prop_schema.get('type')}"
+
+        allowed_values = prop_schema.get("enum")
+        if allowed_values is not None and value not in allowed_values:
+            return f"argument '{key}' must be one of {allowed_values}, got {value!r}"
 
     return None
 

@@ -1,6 +1,6 @@
 # Agent Security
 
-**Status:** [PLANNED] — priority document
+**Status:** [TESTED] — every principle below is now implemented and verified by ResearchAgent (Gate 2), not just documented
 **Owner:** Archange Elie Yatte
 **Last Updated:** 2026-08-08
 
@@ -52,7 +52,11 @@ Audit: REQUIRED
 
 ## Elevated risk given current AI setup
 
-The local model in use (`qwen2.5:3b`, ~4GB VRAM constraint — see [06-ai/model-strategy.md](../06-ai/model-strategy.md)) is more prone to malformed or hallucinated tool calls than a frontier cloud model. This makes strict server-side validation (not model-side prompting alone) load-bearing rather than defense-in-depth — a malformed call must be **structurally impossible** to execute, not just "unlikely due to good prompting."
+The local model in use (`qwen2.5-coder:3b`, ~4GB VRAM constraint — see [06-ai/model-strategy.md](../06-ai/model-strategy.md)) is more prone to malformed or hallucinated tool calls than a frontier cloud model. This makes strict server-side validation (not model-side prompting alone) load-bearing rather than defense-in-depth — a malformed call must be **structurally impossible** to execute, not just "unlikely due to good prompting."
+
+## Verified, not just designed (Gate 1 + Gate 2)
+
+This is no longer a theoretical threat model — [ADR-0012](../adr/0012-tool-calling-contract.md) measured the real model hallucinating tool names on ~19% of out-of-scope trials and fabricating arguments on ~24%. [ResearchAgent](../07-agents/agents/research-agent.md) proves every failure mode above is rendered harmless: hallucinated tool → `UNKNOWN_TOOL` → rejected, logged, no execution; malformed JSON → `MALFORMED` → same; missing/invalid arguments → `INVALID_ARGUMENTS` → same; insufficient permission → `PERMISSION_DENIED` → same, proven end to end in `backend/tests/test_research_agent.py`; MEDIUM/HIGH without confirmation → `CONFIRMATION_REQUIRED` → same, proven with a synthetic test-only tool in `backend/tests/test_authorization_pipeline.py`.
 
 ## Related documentation
 

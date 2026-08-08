@@ -1,6 +1,6 @@
 # Tool Use
 
-**Status:** [PARTIAL] — mechanical contract implemented and measured (Gate 1); no agent consumes it yet
+**Status:** [TESTED] — mechanical contract implemented (Gate 1) and now consumed end to end by ResearchAgent (Gate 2), including a real live verification
 **Owner:** Archange Elie Yatte
 **Last Updated:** 2026-08-08
 
@@ -28,6 +28,10 @@ The reliability note below was a prediction; it has now been tested against real
 - The model never uses Ollama's native structured `tool_calls` response field — every proposal must be parsed from free-text `content`, including handling markdown code fences and outright malformed JSON.
 
 Step 3 above (validate before anything else happens) is therefore not optional hardening — this experiment is direct evidence it is load-bearing: it is what turns 100% hallucination-on-mismatch into zero actual risk, since a proposal naming an unregistered tool is simply rejected. See [tool_call_parsing.py](../../backend/app/ai/tool_call_parsing.py) (discriminated outcomes: `VALID`/`MALFORMED`/`UNKNOWN_TOOL`/`INVALID_ARGUMENTS`/`NO_TOOL_CALL`) for the implementation this maps to.
+
+## First real consumer (Gate 2)
+
+[ResearchAgent](../07-agents/agents/research-agent.md) is the first agent built on this contract: it offers only `ToolRegistry.definitions_for_permissions(...)`-filtered tools (step 1), and every proposal passes through `parse_tool_response` then `authorize_tool_call` (steps 2–4) before `read_rss_feed` ever executes. Verified live against real Ollama, a real public RSS feed, and a real PostgreSQL audit trail.
 
 ## Related documentation
 

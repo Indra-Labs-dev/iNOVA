@@ -9,6 +9,7 @@ import jwt
 from fastapi import Depends, Header
 from sqlalchemy.orm import Session as DbSession
 
+from app.agents.research_agent import ResearchAgent
 from app.ai.ollama_provider import OllamaProvider
 from app.ai.provider import LLMProvider
 from app.ai.service import AIService
@@ -16,8 +17,16 @@ from app.core.database import get_db
 from app.core.errors import APIError
 from app.core.security import decode_access_token
 from app.models.user import User
+from app.repositories.audit_log_repository import AuditLogRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
+from app.tools.registry import ToolRegistry, default_registry
+
+# Ensure built-in tools are registered before anything resolves the registry —
+# importing the module is what triggers app/tools/research_tools.py's
+# `default_registry.register(...)` call at import time (see
+# docs/adr/0013-static-tool-registry.md).
+import app.tools.research_tools  # noqa: F401,E402
 
 
 def get_user_repository(db: DbSession = Depends(get_db)) -> UserRepository:
@@ -60,3 +69,19 @@ def get_current_user(
     if user is None or not user.is_active:
         raise APIError(401, "invalid_token", "Invalid or expired access token.")
     return user
+
+
+def get_audit_log_repository(db: DbSession = Depends(get_db)) -> AuditLogRepository:
+    return AuditLogRepository(db)
+
+
+def get_tool_registry() -> ToolRegistry:
+    return default_registry
+
+
+def get_research_agent(
+    ai_service: AIService = Depends(get_ai_service),
+    tool_registry: ToolRegistry = Depends(get_tool_registry),
+    audit_repo: AuditLogRepository = Depends(get_audit_log_repository),
+) -> ResearchAgent:
+    return ResearchAgent(ai_service, tool_registry, audit_repo)

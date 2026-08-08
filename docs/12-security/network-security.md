@@ -1,6 +1,6 @@
 # Network Security
 
-**Status:** [PARTIAL] — CORS policy implemented in Phase 0 (`backend/app/main.py`)
+**Status:** [PARTIAL] — CORS policy implemented in Phase 0; SSRF prevention implemented in Gate 2 (`read_rss_feed`)
 **Owner:** Archange Elie Yatte
 **Last Updated:** 2026-08-08
 
@@ -27,7 +27,12 @@ Transport and network-layer concerns.
 
 This was discovered as a real integration bug during Phase 0 (the Flutter web build was blocked by the CORS preflight against the documented static origin list) and fixed directly rather than left as a `TODO`, since it was required for the MVP success criteria's frontend↔backend integration to actually work.
 
+## SSRF prevention — implemented (Gate 2)
+
+The first tool with real network access (`read_rss_feed`, [ResearchAgent](../07-agents/agents/research-agent.md)) is designed so the model **never supplies a URL**: its only input is `feed_id`, constrained by JSON Schema `enum` to a small, hardcoded, server-side allowlist (`backend/app/tools/research_tools.py::RSS_ALLOWLIST`). The handler resolves `feed_id` → URL itself; no argument from the model ever becomes part of the outbound request URL, so there is no code path through which a hallucinated or adversarial value (`http://169.254.169.254/...`, `http://localhost:...`, `http://10.x.x.x`, etc.) can reach the network layer — this is checked defensively at two layers: the JSON Schema `enum` (rejected as `INVALID_ARGUMENTS` before execution) and again inside the handler itself (never trust that upstream validation was the only gate). `follow_redirects=False` additionally prevents an allowlisted feed from redirecting the request off-allowlist. See `backend/tests/test_research_tools.py::test_url_smuggled_as_feed_id_is_rejected_without_any_network_call` for the regression test.
+
 ## Related documentation
 
 - [Security architecture](security-architecture.md)
 - [Deployment](../13-devops/deployment.md)
+- [ResearchAgent](../07-agents/agents/research-agent.md)

@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/routing/app_router.dart';
 import '../../../core/theme/inova_spacing.dart';
 import '../../../shared/widgets/aira_placeholder.dart';
 import '../../../shared/widgets/primary_button.dart';
@@ -35,7 +36,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(INovaSpacing.lg),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -74,6 +75,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   const AiraPlaceholder(),
                   const SizedBox(height: INovaSpacing.md),
                   _ResponseArea(state: chatState),
+                  const SizedBox(height: INovaSpacing.lg),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.research),
+                    child: const Text('Try ResearchAgent →'),
+                  ),
                 ],
               ),
             ),

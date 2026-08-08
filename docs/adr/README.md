@@ -24,6 +24,7 @@ Index every ADR for iNOVA. See [02-architecture/architecture-decisions.md](../02
 | [0010](0010-authentication-approach.md) | Authentication — in-house JWT + revocable sessions | Accepted |
 | [0011](0011-alembic-migrations.md) | Database migrations — Alembic | Accepted |
 | [0012](0012-tool-calling-contract.md) | Tool-calling contract shape and Gate 1 reliability findings | Accepted |
+| [0013](0013-static-tool-registry.md) | Static in-code Tool Registry (not DB-driven) | Accepted |
 
 ## Adding a new ADR
 

@@ -19,8 +19,6 @@ class AiChatRepository {
   }
 }
 
-final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());
-
 final aiChatRepositoryProvider = Provider<AiChatRepository>(
   (ref) => AiChatRepository(ref.watch(apiClientProvider)),
 );

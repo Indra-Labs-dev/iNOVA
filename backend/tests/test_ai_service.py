@@ -9,11 +9,13 @@ class StubProvider(LLMProvider):
     def __init__(self, response: LLMResponse | None = None):
         self.last_message = None
         self.last_tools = None
+        self.last_system = None
         self._response = response or LLMResponse(content="stubbed response", tool_call=None)
 
-    def generate(self, message: str, tools=None) -> LLMResponse:
+    def generate(self, message: str, tools=None, system=None) -> LLMResponse:
         self.last_message = message
         self.last_tools = tools
+        self.last_system = system
         return self._response
 
 

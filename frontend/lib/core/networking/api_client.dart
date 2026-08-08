@@ -3,6 +3,7 @@
 // it directly.
 import 'dart:convert';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
@@ -19,10 +20,14 @@ class ApiClient {
   Future<Map<String, dynamic>> postJson(
     String path, {
     required Map<String, dynamic> body,
+    String? authToken,
   }) async {
     final response = await _httpClient.post(
       Uri.parse('$_baseUrl$path'),
-      headers: const {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
       body: jsonEncode(body),
     );
 
@@ -44,3 +49,8 @@ class ApiClient {
 
   void close() => _httpClient.close();
 }
+
+/// Single canonical provider — shared across features so there's only one
+/// HTTP client (and, if it grows connection pooling/interceptors later,
+/// only one place that needs it).
+final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());

@@ -1,6 +1,6 @@
 # iNOVA — Project Status
 
-**Last Updated:** 2026-08-08 (Phase 1 Gate 1 — tool-calling reliability)
+**Last Updated:** 2026-08-08 (Phase 1 Gate 2 — ResearchAgent vertical slice)
 **Owner:** Archange Elie Yatte
 
 ## Purpose
@@ -24,19 +24,21 @@ DEPRECATED    — was built, now retired
 
 | Module | Status | Notes |
 |---|---|---|
-| Documentation (`docs/`) | IN PROGRESS | 165+ files; reviewed and audited 2026-08-08 (naming, roadmap dependencies, MVP scope) — see [ARCHITECTURE_FREEZE.md](ARCHITECTURE_FREEZE.md). |
-| Frontend (Flutter shell) | TESTED | `flutter create` scaffold + Riverpod, minimal routing, dark theme, one screen (`AiChatScreen`) wired to the backend. 5/5 tests pass, `flutter analyze` clean, `flutter build web` succeeds, manually verified working in a real browser against the real backend. Nothing beyond the Phase 0 slice — see [16-roadmap/mvp.md](16-roadmap/mvp.md) for what's excluded. |
-| 3D World (Three.js) | NOT STARTED | Phase 3 — deliberately not started in Phase 0. |
-| Mascot (Aira/Rive) | NOT STARTED | Name confirmed ([ADR-0009](adr/0009-mascot-naming-aira.md)); a static placeholder widget exists in the Flutter shell (`AiraPlaceholder`), but no Rive integration — that's Phase 2. |
-| Backend (FastAPI) | TESTED | `GET /health`, `POST/GET /auth/{register,login,refresh,logout,me}`, `POST /ai/chat`. 19/19 tests pass (SQLite + fakes, no external dependency). Manually verified end-to-end against real PostgreSQL and real Ollama. |
-| AI Core / LLMProvider | TESTED | `LLMProvider` abstract interface + `OllamaProvider` + `AIService`, unit-tested with a fake provider and with `respx`-mocked HTTP. Verified against a real local Ollama instance. Tool-calling contract (`generate(message, tools?) -> LLMResponse`) implemented and measured for reliability — see [ADR-0012](adr/0012-tool-calling-contract.md). Still no memory, no Agent Router, no real agent consuming it yet. |
-| Authentication | TESTED | In-house JWT + revocable refresh sessions ([ADR-0010](adr/0010-authentication-approach.md)). Register/login/refresh-rotation/logout/`me` all covered by tests and verified live. Email verification and MFA remain `[PLANNED]`. |
-| Tool-calling (Gate 1) | TESTED | `read_rss_feed`-shaped synthetic tool tested against real `qwen2.5-coder:3b` — 100% reliable when the request clearly matches the offered tool with an explicit argument; hallucinates tool names otherwise (mitigated by mandatory backend validation). See [ADR-0012](adr/0012-tool-calling-contract.md). No ResearchAgent, Tool Registry, or AuditLog built yet — that's Gate 2, pending go-ahead. |
-| Agents (all 9) | NOT STARTED | Phase 4+ — deliberately out of Phase 0/Gate 1 scope. |
+| Documentation (`docs/`) | IN PROGRESS | 165+ files; reviewed and audited 2026-08-08 — see [ARCHITECTURE_FREEZE.md](ARCHITECTURE_FREEZE.md). |
+| Frontend (Flutter shell) | TESTED | Riverpod, minimal routing (2 routes), dark theme, `AiChatScreen` (Phase 0) + `ResearchScreen` (Gate 2, incl. a minimal inline sign-in gate). 8/8 tests pass, `flutter analyze` clean, `flutter build web` succeeds, manually verified in a real browser against the real backend for both screens. |
+| 3D World (Three.js) | NOT STARTED | Phase 3. |
+| Mascot (Aira/Rive) | NOT STARTED | Name confirmed ([ADR-0009](adr/0009-mascot-naming-aira.md)); static placeholder only (`AiraPlaceholder`, real concept art) — no Rive integration, that's Phase 2. |
+| Backend (FastAPI) | TESTED | `GET /health`, `POST/GET /auth/*`, `POST /ai/chat`, `POST /agents/research`. 72/72 default tests pass (SQLite + fakes) + 4/4 real-Ollama-marked tests. Verified end-to-end against real PostgreSQL and real Ollama, including through the actual Flutter UI. |
+| AI Core / LLMProvider | TESTED | `LLMProvider.generate(message, tools?, system?) -> LLMResponse`, implemented in `OllamaProvider`. Tool-calling measured (Gate 1, [ADR-0012](adr/0012-tool-calling-contract.md)) and now consumed for real by `ResearchAgent` (Gate 2). Still no conversation memory, no Agent Router. |
+| Authentication | TESTED | In-house JWT + revocable refresh sessions ([ADR-0010](adr/0010-authentication-approach.md)). Now also gates `/agents/research`. Email verification and MFA remain `[PLANNED]`. |
+| Tool Registry | TESTED | Static, in-code (`ToolRegistry`, [ADR-0013](adr/0013-static-tool-registry.md)). One real tool registered: `read_rss_feed`. No API surface can register/modify a tool — by construction, not policy. |
+| ResearchAgent | TESTED | Implemented ([docs/07-agents/agents/research-agent.md](07-agents/agents/research-agent.md)): permission check, argument validation, tool execution, audit logging, AI synthesis, source attribution. Verified live end to end (real Ollama, real RSS feed, real PostgreSQL audit entry) through the actual Flutter app. Security-tested: hallucinated tool, invalid arguments, permission-denied, and a synthetic MEDIUM/HIGH tool's confirmation gate all proven to block execution. |
+| AuditLog | TESTED | `audit_logs` table, one migration, `AuditLogRepository`. Records success, permission-denial, invalid-tool-call, invalid-arguments, confirmation-required, and execution-failure outcomes — verified in tests and against a real database. |
+| Agents (other 8) | NOT STARTED | Phase 4+. |
 | Cybersecurity Hub | NOT STARTED | Phase 6. |
 | Programming Hub | NOT STARTED | Phase 6. |
 | News Intelligence | NOT STARTED | Phase 5 (MVP slice planned, not started). |
-| Research Hub | NOT STARTED | Phase 5. |
+| Research Hub | PARTIAL | `ResearchAgent`'s `read_rss_feed` slice only — the full hub (dedup, classification, multiple source types) is Phase 5. |
 | OSINT Hub | NOT STARTED | Future. |
 | Learning Hub | NOT STARTED | Phase 7. |
 | Productivity Hub | NOT STARTED | Phase 7. |
@@ -44,19 +46,19 @@ DEPRECATED    — was built, now retired
 | Cloud Hub | NOT STARTED | Phase 7. |
 | Mission System | NOT STARTED | Phase 4+ (MVP slice planned, not started). |
 | Gamification | NOT STARTED | |
-| Database (PostgreSQL schema) | TESTED | `users`, `sessions` tables only, via one reviewed, autogenerated Alembic migration ([ADR-0011](adr/0011-alembic-migrations.md)). Upgrade/downgrade cycle verified against a real PostgreSQL 16 container. No other entities from [10-data/entities.md](10-data/entities.md) created yet — added only as their owning feature needs them. |
-| Testing | IMPLEMENTED | pytest (backend, 19 tests) + `flutter test` (frontend, 5 tests) both wired and passing. No CI yet (see DevOps below). |
-| DevOps (Docker/CI/CD) | PARTIAL | `docker-compose.yml` with PostgreSQL only (deliberately minimal — no Redis, no backend/frontend containers yet, see [13-devops/docker.md](13-devops/docker.md)). No CI/CD pipeline, no staging/production deployment. |
-| Git repository | STABLE | `Indra-Labs-dev/iNOVA`, `main` branch. History untouched by this work — no dates/authors/commits altered. |
+| Database (PostgreSQL schema) | TESTED | `users`, `sessions`, `audit_logs` — two reviewed, autogenerated Alembic migrations. Upgrade/downgrade verified against real PostgreSQL 16. Other entities added only as their owning feature needs them. |
+| Testing | IMPLEMENTED | pytest (backend, 72 default + 4 real-Ollama) + `flutter test` (frontend, 8) both wired and passing. No CI yet. |
+| DevOps (Docker/CI/CD) | PARTIAL | `docker-compose.yml` with PostgreSQL only (deliberately minimal). No CI/CD pipeline, no staging/production deployment. |
+| Git repository | STABLE | `Indra-Labs-dev/iNOVA`, `main` branch. History untouched by this work. |
 
 ## What exists in the repository today
 
 - `iNOVA_MASTER_CONTEXT.md`, `iNOVA_CAHIER_DES_CHARGES.md`, `iNOVA_OBJECTIFS_FONCTIONNALITES_STACK.md` — product vision and specifications.
 - `docs/` — full technical/product documentation set + [ARCHITECTURE_FREEZE.md](ARCHITECTURE_FREEZE.md).
-- `backend/` — FastAPI application (see `backend/README.md` for setup).
-- `frontend/` — Flutter application (see `frontend/README.md` for setup).
+- `backend/` — FastAPI application, including `app/agents/`, `app/tools/` (new in Gate 2).
+- `frontend/` — Flutter application, including `features/research/` and `core/auth/` (new in Gate 2).
 - `docker-compose.yml` — PostgreSQL for local development.
-- `logo.png`, `mascotte-aira.png` — brand/concept assets (also bundled in `frontend/assets/images/`, used by the Flutter shell).
+- `logo.png`, `mascotte-aira.png` — brand/concept assets (also bundled in `frontend/assets/images/`).
 - `README.md` — project entry point with author/project/AI companion attribution.
 
 ## Decisions locked in
@@ -65,26 +67,29 @@ DEPRECATED    — was built, now retired
 - 3D: Three.js/WebGL ([ADR-0002](adr/0002-threejs-3d-world.md)) — not yet implemented.
 - Mascot animation: Rive ([ADR-0003](adr/0003-rive-mascot.md)) — not yet implemented (placeholder only).
 - Backend: FastAPI ([ADR-0004](adr/0004-fastapi-backend.md)) — **implemented**.
-- AI: Ollama local ([ADR-0005](adr/0005-ollama-local-llm.md), see its 2026-08-08 addendum: the environment's actual model tag is `qwen2.5-coder:3b`, not the originally documented `qwen2.5:3b-instruct-q4_K_M`, due to real network conditions) — **implemented**.
+- AI: Ollama local ([ADR-0005](adr/0005-ollama-local-llm.md), incl. 2026-08-08 addendum on the `qwen2.5-coder:3b` tag substitution) — **implemented**.
 - AI abstraction: `LLMProvider` interface ([ADR-0006](adr/0006-llmprovider-abstraction.md)) — **implemented**.
-- Agent permission model ([ADR-0007](adr/0007-agent-permissions.md)) — designed, not yet exercised (no agents built yet).
-- Modular architecture ([ADR-0008](adr/0008-modular-architecture.md)) — followed throughout Phase 0 code.
+- Agent permission model ([ADR-0007](adr/0007-agent-permissions.md)) — **implemented and exercised** by ResearchAgent.
+- Modular architecture ([ADR-0008](adr/0008-modular-architecture.md)) — followed throughout.
 - Mascot naming: **iNOVA** (product) / **Aira** (mascot) ([ADR-0009](adr/0009-mascot-naming-aira.md)) — reflected in code and docs.
 - Authentication: in-house JWT + revocable sessions ([ADR-0010](adr/0010-authentication-approach.md)) — **implemented**.
 - DB migrations: Alembic ([ADR-0011](adr/0011-alembic-migrations.md)) — **implemented**.
 - Tool-calling contract + strategy (native, strictly validated) ([ADR-0012](adr/0012-tool-calling-contract.md)) — **implemented and measured**.
+- Static in-code Tool Registry ([ADR-0013](adr/0013-static-tool-registry.md)) — **implemented**.
 
 ## Known gaps / deliberately deferred
 
 - No CI/CD pipeline yet.
-- No email verification, no MFA.
-- Redis not introduced (no documented use case needs it yet — see [09-backend/background-jobs.md](09-backend/background-jobs.md)).
-- Rate limiting on auth/AI endpoints not implemented ([12-security/network-security.md](12-security/network-security.md)).
-- `Nova*` design-system component-prefix naming vs. `Aira*` remains an open decision ([03-frontend/design-system.md](03-frontend/design-system.md)).
+- No email verification, no MFA, no per-user permission grant table (every authenticated user implicitly has `research.read` — see [research-agent.md](07-agents/agents/research-agent.md) "Permissions").
+- No dedicated frontend auth feature — `ResearchScreen` has a minimal inline, unpersisted sign-in gate (see `frontend/lib/features/research/presentation/research_screen.dart`), not a real session/login feature.
+- Redis not introduced (no documented use case needs it yet).
+- Rate limiting on auth/AI/agents endpoints not implemented.
+- `Nova*` design-system component-prefix naming vs. `Aira*` remains an open decision.
+- Multi-tool discrimination (does the model choose correctly among *several* real tools) is untested — Gate 1/2 only ever offered one tool at a time. Re-test before Phase 4's Agent Router.
 
 ## Recommended next step
 
-Phase 0's success criteria are met (see [ARCHITECTURE_FREEZE.md §6](ARCHITECTURE_FREEZE.md)). Phase 1 Gate 1 (tool-calling reliability) is complete — see [ADR-0012](adr/0012-tool-calling-contract.md) — with a NATIVE TOOL CALLING recommendation for the narrow `ResearchAgent` scope. Pending explicit go-ahead: Gate 2 = `AuditLog` + static Tool Registry + real `read_rss_feed` (with an RSS allowlist) + `ResearchAgent` itself, per the Phase 1 plan.
+Gate 2 is complete: the full `User → Flutter → FastAPI → ResearchAgent → LLM → Tool Registry → Permission → read_rss_feed → RSS → AuditLog → AI synthesis → Flutter` chain works, is tested, and was verified live. Per the gated plan, do not expand further (no second agent, no Agent Router, no additional tools) without an explicit go-ahead — see [ADR-0013](adr/0013-static-tool-registry.md) Consequences for when a dynamic registry might become worth revisiting.
 
 ## Related documentation
 
@@ -92,3 +97,4 @@ Phase 0's success criteria are met (see [ARCHITECTURE_FREEZE.md §6](ARCHITECTUR
 - [Scope](00-overview/scope.md)
 - [Roadmap](16-roadmap/roadmap.md)
 - [MVP](16-roadmap/mvp.md)
+- [ResearchAgent](07-agents/agents/research-agent.md)
