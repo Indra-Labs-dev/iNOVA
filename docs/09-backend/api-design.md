@@ -1,8 +1,8 @@
 # API Design
 
-**Status:** [PARTIAL] — `/auth`, `/ai`, `/agents/research`, `POST /missions` implemented; the rest remain `[PLANNED]`
+**Status:** [PARTIAL] — `/auth`, `/ai` (deprecated), `/agents/research`, `POST /missions`, `/conversations` implemented; the rest remain `[PLANNED]`
 **Owner:** Archange Elie Yatte
-**Last Updated:** 2026-08-08 (Gate 3 — Mission System MVP)
+**Last Updated:** 2026-08-08 (Gate 4 — Conversation & Short-Term Memory)
 
 ## Purpose
 
@@ -16,11 +16,12 @@ Endpoint inventory and conventions. Auth mechanics are in [authentication.md](au
 
 ```text
 /api/v1/auth       — IMPLEMENTED (register, login, refresh, logout, me)
-/api/v1/ai         — IMPLEMENTED (chat — Phase 0, unauthenticated, no tools)
+/api/v1/ai         — DEPRECATED (chat — Phase 0, unauthenticated, no tools; superseded by /conversations, Gate 4 — see below)
 /api/v1/agents     — PARTIAL (POST /agents/research only — Gate 2, ResearchAgent)
 /api/v1/users      — PLANNED
 /api/v1/tools      — PLANNED (no endpoint exposes the Tool Registry — see docs/adr/0013-static-tool-registry.md: it must stay backend-only, not become an API surface)
 /api/v1/missions   — PARTIAL (POST /missions only — Gate 3, MVP; GET deferred)
+/api/v1/conversations — IMPLEMENTED (Gate 4 — create/list, send/list messages, delete)
 /api/v1/news       — PLANNED
 /api/v1/research   — PLANNED (superseded in scope by /agents/research for Phase 1 — reconcile naming when the full Research Hub is built, Phase 5)
 /api/v1/security   — PLANNED
@@ -39,6 +40,22 @@ Requires authentication (unlike `/ai/chat` — this endpoint performs permission
 
 Requires authentication — the mission's owner is always the authenticated user, resolved server-side, never from the request body. Request: `{goal: string}` — no other field exists, so a client cannot supply `user_id`, `xp_awarded`, `permission`, `risk`, or `agent_name` as authoritative values even if it tries (see [Mission System](../08-modules/mission-system.md)). Response: `{id, status, answer, sources: [{title, link, published}], xp_awarded, failure_reason}`. Orchestration is `MissionService` (`backend/app/services/mission_service.py`), which wraps `ResearchAgent.research()` with no AI/tool/permission logic of its own; the router (`backend/app/api/v1/missions.py`) is thin. `GET /api/v1/missions` (list) is deferred — not needed for the MVP feedback loop.
 
+## `/api/v1/conversations` (implemented, Gate 4)
+
+All routes require authentication; every `conversation_id` in a URL is re-validated against the authenticated user server-side (`ConversationRepository.get_for_user`) before any read or write — a client can never reach another user's conversation, and gets the same 404 whether the id doesn't exist or belongs to someone else, never a 403 that would confirm existence.
+
+- `POST /conversations` → `{id, created_at, updated_at}`.
+- `GET /conversations` → list, most recently updated first.
+- `POST /conversations/{id}/messages` — request `{content: string}` (no other field exists, so no `user_id`/`role` can be supplied by a client with any effect). Response: `{user_message: {...}, assistant_message: {...}}`, each `{id, role, content, created_at}`.
+- `GET /conversations/{id}/messages` — full history, oldest first.
+- `DELETE /conversations/{id}` — hard delete (204), cascades to its messages at the database level (`ON DELETE CASCADE`).
+
+Orchestration is `ConversationService` (`backend/app/services/conversation_service.py`): reads a bounded window of the conversation's own prior messages (see [Context management](../06-ai/context-management.md) for how the window size was chosen), calls `AIService.generate()` with that history, and persists both turns. No AI/tool/permission logic of its own. See [Memory](../06-ai/memory.md) for what is and isn't in scope (session-only, no durable cross-conversation memory).
+
+## Deprecation: `/ai/chat`
+
+Superseded by `POST /api/v1/conversations/{id}/messages`, which is authenticated and persists history — `/ai/chat` is neither. As of Gate 4, no frontend code calls it (`AiChatScreen` was migrated to `/conversations`). Rather than break the Phase 0 contract outright, the route is marked `deprecated=True` (surfaced in the OpenAPI docs) and kept fully functional; it has no scheduled removal date.
+
 ## Conventions
 
 - Versioned from day one (`/api/v1/...`) — followed.
@@ -54,3 +71,5 @@ Requires authentication — the mission's owner is always the authenticated user
 - [Authorization](authorization.md)
 - [ResearchAgent](../07-agents/agents/research-agent.md)
 - [Mission System](../08-modules/mission-system.md)
+- [Memory](../06-ai/memory.md)
+- [Context management](../06-ai/context-management.md)
