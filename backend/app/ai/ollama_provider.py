@@ -51,10 +51,13 @@ class OllamaProvider(LLMProvider):
         message: str,
         tools: list[ToolDefinition] | None = None,
         system: str | None = None,
+        history: list[dict[str, str]] | None = None,
     ) -> LLMResponse:
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
+        if history:
+            messages.extend(history)
         messages.append({"role": "user", "content": message})
 
         payload = {"model": self._model, "messages": messages, "stream": False}

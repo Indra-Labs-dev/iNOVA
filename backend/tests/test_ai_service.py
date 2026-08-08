@@ -10,12 +10,14 @@ class StubProvider(LLMProvider):
         self.last_message = None
         self.last_tools = None
         self.last_system = None
+        self.last_history = None
         self._response = response or LLMResponse(content="stubbed response", tool_call=None)
 
-    def generate(self, message: str, tools=None, system=None) -> LLMResponse:
+    def generate(self, message: str, tools=None, system=None, history=None) -> LLMResponse:
         self.last_message = message
         self.last_tools = tools
         self.last_system = system
+        self.last_history = history
         return self._response
 
 
@@ -55,6 +57,16 @@ def test_ai_service_chat_handles_tool_call_response_gracefully():
     service = AIService(provider)
 
     assert service.chat("hello") == ""
+
+
+def test_ai_service_generate_passes_history_through():
+    provider = StubProvider()
+    service = AIService(provider)
+    history = [{"role": "user", "content": "earlier turn"}]
+
+    service.generate("current turn", history=history)
+
+    assert provider.last_history == history
 
 
 def test_ai_service_exposes_model_name():

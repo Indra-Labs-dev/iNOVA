@@ -38,7 +38,7 @@ class ScriptedLLM(LLMProvider):
         self._responses = list(responses)
         self.calls: list[dict] = []
 
-    def generate(self, message, tools=None, system=None) -> LLMResponse:
+    def generate(self, message, tools=None, system=None, history=None) -> LLMResponse:
         self.calls.append({"message": message, "tools": tools, "system": system})
         return self._responses.pop(0)
 

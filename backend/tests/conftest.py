@@ -24,7 +24,7 @@ class FakeLLMProvider(LLMProvider):
 
     model = "fake-model"
 
-    def generate(self, message: str, tools=None, system=None) -> LLMResponse:
+    def generate(self, message: str, tools=None, system=None, history=None) -> LLMResponse:
         return LLMResponse(content=f"echo: {message}", tool_call=None)
 
 

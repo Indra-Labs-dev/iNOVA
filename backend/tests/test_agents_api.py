@@ -26,7 +26,7 @@ class ScriptedLLM(LLMProvider):
     def __init__(self, responses):
         self._responses = list(responses)
 
-    def generate(self, message, tools=None, system=None):
+    def generate(self, message, tools=None, system=None, history=None):
         return self._responses.pop(0)
 
 

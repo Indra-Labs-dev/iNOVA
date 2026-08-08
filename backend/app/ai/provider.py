@@ -16,6 +16,7 @@ class LLMProvider(ABC):
         message: str,
         tools: list[ToolDefinition] | None = None,
         system: str | None = None,
+        history: list[dict[str, str]] | None = None,
     ) -> LLMResponse:
         """Return a completion, or a tool-call proposal if `tools` were offered
         and the model chose to use one (see docs/06-ai/tool-use.md contract).
@@ -23,8 +24,15 @@ class LLMProvider(ABC):
         `system` is an optional system-role instruction — added in Gate 2
         because the Gate 1 experiment (docs/adr/0012-tool-calling-contract.md)
         measured it materially reducing tool-name hallucination on
-        out-of-scope requests. Still a single user message, no multi-turn
-        history (see docs/16-roadmap/mvp.md).
+        out-of-scope requests.
+
+        `history` is an optional bounded list of prior turns, each
+        `{"role": "user" | "assistant", "content": str}`, oldest first —
+        added in Gate 4 for ConversationService (see
+        docs/06-ai/context-management.md: system + relevant memory + bounded
+        recent turns). Deliberately a plain list of dicts, not a `Message`
+        model — this interface must not depend on a concrete persistence
+        shape (see docs/adr/0006-llmprovider-abstraction.md).
 
         A tool call returned here is a PROPOSAL ONLY — see
         docs/07-agents/permissions.md: the caller must validate it against

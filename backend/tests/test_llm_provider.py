@@ -2,6 +2,8 @@
 (see docs/14-testing/agent-tests.md). Tool-call parsing edge cases live in
 test_tool_call_parsing.py; this file covers OllamaProvider's own plumbing
 (request shape, error handling, delegation to the parser)."""
+import json
+
 import httpx
 import pytest
 import respx
@@ -79,6 +81,41 @@ def test_generate_falls_back_to_content_on_unknown_tool_name():
 
     assert result.tool_call is None
     assert result.content == '{"name": "calculate", "arguments": {}}'
+
+
+@respx.mock
+def test_generate_includes_bounded_history_between_system_and_current_message():
+    route = respx.post("http://fake-ollama:11434/api/chat").mock(
+        return_value=httpx.Response(200, json={"message": {"content": "ok"}})
+    )
+    provider = OllamaProvider(base_url="http://fake-ollama:11434", model="test-model")
+    history = [
+        {"role": "user", "content": "I'm working on iNOVA."},
+        {"role": "assistant", "content": "What's your project about?"},
+    ]
+
+    provider.generate("Reply using the context above.", system="You are Aira.", history=history)
+
+    sent_messages = json.loads(route.calls[0].request.content)["messages"]
+    assert sent_messages == [
+        {"role": "system", "content": "You are Aira."},
+        {"role": "user", "content": "I'm working on iNOVA."},
+        {"role": "assistant", "content": "What's your project about?"},
+        {"role": "user", "content": "Reply using the context above."},
+    ]
+
+
+@respx.mock
+def test_generate_omits_history_key_shape_when_none_given():
+    route = respx.post("http://fake-ollama:11434/api/chat").mock(
+        return_value=httpx.Response(200, json={"message": {"content": "ok"}})
+    )
+    provider = OllamaProvider(base_url="http://fake-ollama:11434", model="test-model")
+
+    provider.generate("hello")
+
+    sent_messages = json.loads(route.calls[0].request.content)["messages"]
+    assert sent_messages == [{"role": "user", "content": "hello"}]
 
 
 @respx.mock
