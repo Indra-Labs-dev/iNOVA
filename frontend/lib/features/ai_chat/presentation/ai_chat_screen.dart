@@ -26,6 +26,13 @@ class AiChatScreen extends ConsumerWidget {
         title: const Text('iNOVA — Aira'),
         actions: [
           TextButton(
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.world),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Text('3D World'), SizedBox(width: 4), Icon(Icons.arrow_forward, size: 16)],
+            ),
+          ),
+          TextButton(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.research),
             child: const Row(
               mainAxisSize: MainAxisSize.min,

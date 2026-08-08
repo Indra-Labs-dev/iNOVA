@@ -7,6 +7,7 @@ import '../../features/ai_chat/presentation/ai_chat_screen.dart';
 import '../../features/missions/presentation/mission_screen.dart';
 import '../../features/news/presentation/news_screen.dart';
 import '../../features/research/presentation/research_screen.dart';
+import '../../features/world/presentation/world_screen.dart';
 
 class AppRoutes {
   const AppRoutes._();
@@ -15,11 +16,13 @@ class AppRoutes {
   static const String research = '/research';
   static const String missions = '/missions';
   static const String news = '/news';
+  static const String world = '/world';
 
   static Map<String, WidgetBuilder> get table => {
         home: (_) => const AiChatScreen(),
         research: (_) => const ResearchScreen(),
         missions: (_) => const MissionScreen(),
         news: (_) => const NewsScreen(),
+        world: (_) => const WorldScreen(),
       };
 }

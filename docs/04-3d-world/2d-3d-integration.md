@@ -37,9 +37,32 @@ An isolated feasibility spike validated the mechanical half of this contract: a 
 `dart:js_interop` calling into a small `three_bridge.js`) and events flowing Three.js → Flutter
 (via a JS callback into Dart), both proven live and repeatedly, including in a `--release`
 build. The spike did not implement the versioned bridge protocol or a navigation-triggering
-event — see [Gate 6 report](../16-roadmap/gate-6-3d-spike-report.md) for measurements and the
-Gate 7 proposal, which would be the first Gate to exercise this document's "navigation triggered"
-rule for real. Status here stays `[PLANNED]`.
+event — see [Gate 6 report](../16-roadmap/gate-6-3d-spike-report.md) for measurements.
+
+## Gate 7 — first implemented bridge contract, v1.0.0 (2026-08-08)
+
+`frontend/web/world/world_bridge.js` + `frontend/lib/features/world/` implement a first real,
+versioned instance of this contract — one object, one command, one event:
+
+- **Version**: `bridgeVersion` (currently `"1.0.0"`), exposed as `window.iNovaWorld.bridgeVersion`
+  on the JS side and `kWorldBridgeVersion` in
+  `frontend/lib/features/world/application/world_bridge_interop_web.dart` on the Dart side.
+  Checked once at init; a mismatch is logged (not fatal) rather than failing silently — bump
+  this whenever the shape of `init`/`set*`/`dispose` or the callback payload changes.
+- **Flutter → Three.js command**: `setAccentColor(hex)` — Flutter passes its own real
+  `Theme.of(context).colorScheme.primary`, never a color hardcoded in JS, so the object
+  visualizes real Flutter state per [architecture.md](architecture.md) "Principle".
+- **Three.js → Flutter event**: a raw "object clicked" callback, no payload beyond that. Flutter
+  alone decides what it means — in this increment, `Navigator.pushNamed(context,
+  AppRoutes.missions)`. This is the first real exercise of this document's "navigation
+  triggered" rule: Missions already has a normal 2D entry point, so the 3D path produces exactly
+  the same outcome, not a 3D-only shortcut.
+- **Scope note**: this is a minimal, real contract for one object/one event, not the full future
+  protocol (multiple object types, camera events, richer payloads). Status stays `[PLANNED]` at
+  the document level for that reason — treat this section as the current, honest snapshot of
+  what's actually implemented, not the target shape.
+
+See [Gate 7 report](../16-roadmap/gate-7-first-3d-increment-report.md) for measurements.
 
 ## Related documentation
 
