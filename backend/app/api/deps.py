@@ -13,15 +13,19 @@ from app.agents.research_agent import ResearchAgent
 from app.ai.ollama_provider import OllamaProvider
 from app.ai.provider import LLMProvider
 from app.ai.service import AIService
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.errors import APIError
 from app.core.security import decode_access_token
 from app.models.user import User
 from app.repositories.audit_log_repository import AuditLogRepository
+from app.repositories.conversation_repository import ConversationRepository
+from app.repositories.message_repository import MessageRepository
 from app.repositories.mission_repository import MissionRepository
 from app.repositories.user_progress_repository import UserProgressRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
+from app.services.conversation_service import ConversationService
 from app.services.mission_service import MissionService
 from app.tools.registry import ToolRegistry, default_registry
 
@@ -104,3 +108,19 @@ def get_mission_service(
     user_progress_repo: UserProgressRepository = Depends(get_user_progress_repository),
 ) -> MissionService:
     return MissionService(research_agent, mission_repo, user_progress_repo)
+
+
+def get_conversation_repository(db: DbSession = Depends(get_db)) -> ConversationRepository:
+    return ConversationRepository(db)
+
+
+def get_message_repository(db: DbSession = Depends(get_db)) -> MessageRepository:
+    return MessageRepository(db)
+
+
+def get_conversation_service(
+    ai_service: AIService = Depends(get_ai_service),
+    message_repo: MessageRepository = Depends(get_message_repository),
+) -> ConversationService:
+    settings = get_settings()
+    return ConversationService(ai_service, message_repo, settings.conversation_history_window)
