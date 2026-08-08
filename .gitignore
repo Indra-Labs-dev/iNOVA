@@ -34,6 +34,7 @@ frontend/web/.last_build_id
 .vscode/
 .idea/
 .DS_Store
+.claude/
 
 # --- Logs ---
 *.log
