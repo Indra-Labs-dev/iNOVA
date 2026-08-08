@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/auth_session.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../core/theme/inova_spacing.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../application/research_controller.dart';
@@ -142,6 +143,11 @@ class _ResearchFormState extends ConsumerState<_ResearchForm> {
         ),
         const SizedBox(height: INovaSpacing.lg),
         _ResultArea(state: state),
+        const SizedBox(height: INovaSpacing.lg),
+        TextButton(
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.missions),
+          child: const Text('Try a Mission →'),
+        ),
       ],
     );
   }
