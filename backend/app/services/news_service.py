@@ -18,6 +18,7 @@ Security: `Source.url` is only ever server-seeded (see the migration) —
 nothing here, and nothing upstream of it, ever accepts a URL from a
 client or from the model. See docs/11-intelligence/scraping-policy.md.
 """
+import html
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -41,9 +42,12 @@ _WHITESPACE_RE = re.compile(r"\s+")
 
 def _strip_html(raw: str) -> str:
     """Normalization only — plain-text presentation of the source's own
-    description, never a paraphrase or summary of it.
+    description, never a paraphrase or summary of it. HTML entities (e.g.
+    `&#8217;` inside a CDATA description, which XML parsing alone doesn't
+    decode) are unescaped so the text renders as the source intended.
     """
     text = _TAG_RE.sub(" ", raw)
+    text = html.unescape(text)
     text = _WHITESPACE_RE.sub(" ", text).strip()
     return text[:_MAX_EXCERPT_CHARS]
 

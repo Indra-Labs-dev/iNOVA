@@ -85,6 +85,24 @@ def test_refresh_strips_html_from_excerpt_without_paraphrasing(db_session):
 
 
 @respx.mock
+def test_refresh_unescapes_html_entities_in_excerpt(db_session):
+    """Real feeds put HTML numeric entities (e.g. &#8217;) inside CDATA
+    descriptions — plain XML parsing alone leaves them undecoded (found
+    during Gate 5 live verification against the real github_blog feed).
+    """
+    python_blog, github_blog = _sources(db_session)
+    xml_with_entity = GITHUB_BLOG_XML.replace(b"slash commands", b"Don&#8217;t stop early")
+    respx.get(python_blog.url).mock(return_value=httpx.Response(200, content=PYTHON_BLOG_XML))
+    respx.get(github_blog.url).mock(return_value=httpx.Response(200, content=xml_with_entity))
+
+    _service(db_session).refresh()
+
+    item = NewsItemRepository(db_session).get_by_link("https://github.blog/a-guide/")
+    assert "Don’t stop early" in item.excerpt  # &#8217; decoded to a real right single quote
+    assert "&#8217;" not in item.excerpt
+
+
+@respx.mock
 def test_refresh_is_idempotent_by_link(db_session):
     python_blog, github_blog = _sources(db_session)
     respx.get(python_blog.url).mock(return_value=httpx.Response(200, content=PYTHON_BLOG_XML))
