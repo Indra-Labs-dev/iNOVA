@@ -41,9 +41,13 @@ class Settings(BaseSettings):
 
     # Conversation memory (see docs/06-ai/context-management.md, docs/06-ai/memory.md
     # "MVP scope: short-term conversation memory only"). Bounded window of prior
-    # messages included in each prompt — chosen empirically via the Gate 4.4
-    # experiment (see docs/06-ai/context-management.md "Chosen window").
-    conversation_history_window: int = 10
+    # messages included in each prompt. 20 chosen empirically via the Gate 4.4
+    # experiment against real qwen2.5-coder:3b (see docs/06-ai/context-management.md
+    # "Chosen window"): latency stayed flat (~0.5-2.3s) from 5 to 40 messages, but
+    # recall of an earlier fact was 100% correct only when it fell inside the
+    # window, and confidently wrong (not a hedge/decline) when it fell outside —
+    # so a larger window is close to free and meaningfully safer here.
+    conversation_history_window: int = 20
 
 
 @lru_cache
