@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/auth_session.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../core/theme/inova_spacing.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../application/mission_controller.dart';
@@ -84,6 +85,11 @@ class _MissionFormState extends ConsumerState<_MissionForm> {
         ),
         const SizedBox(height: INovaSpacing.lg),
         _MissionResultArea(state: state),
+        const SizedBox(height: INovaSpacing.lg),
+        TextButton(
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.news),
+          child: const Text('News Digest →'),
+        ),
       ],
     );
   }
