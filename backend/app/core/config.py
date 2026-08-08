@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     ollama_model: str = "qwen2.5-coder:3b"
     ollama_request_timeout_seconds: float = 60.0
 
+    # Conversation memory (see docs/06-ai/context-management.md, docs/06-ai/memory.md
+    # "MVP scope: short-term conversation memory only"). Bounded window of prior
+    # messages included in each prompt — chosen empirically via the Gate 4.4
+    # experiment (see docs/06-ai/context-management.md "Chosen window").
+    conversation_history_window: int = 10
+
 
 @lru_cache
 def get_settings() -> Settings:
