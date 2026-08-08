@@ -37,6 +37,14 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.4.2
   http: ^1.6.0
+  # Gate 6 spike only (docs/16-roadmap — 3D feasibility spike): the Dart SDK
+  # team's own typed JS-interop bindings, the maintained successor to the
+  # now-deprecated dart:html — not a Three.js wrapper or any third-party
+  # abstraction. Used only for standard DOM element creation/platform-view
+  # registration; all actual Three.js interop is hand-written in
+  # lib/spike_3d/. Remove alongside lib/spike_3d/ and web/spike3d/ if the
+  # spike is discarded — nothing outside the spike depends on it.
+  web: ^1.1.0
 
 dev_dependencies:
   flutter_test:
