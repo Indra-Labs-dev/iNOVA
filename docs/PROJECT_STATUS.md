@@ -1,6 +1,6 @@
 # iNOVA — Project Status
 
-**Last Updated:** 2026-08-08 (Phase 1 Gate 5 — Extractive News Digest)
+**Last Updated:** 2026-08-08 (Gate 6 — 3D World Feasibility Spike)
 **Owner:** Archange Elie Yatte
 
 ## Purpose
@@ -26,7 +26,7 @@ DEPRECATED    — was built, now retired
 |---|---|---|
 | Documentation (`docs/`) | IN PROGRESS | 165+ files; reviewed and audited 2026-08-08 — see [ARCHITECTURE_FREEZE.md](ARCHITECTURE_FREEZE.md). |
 | Frontend (Flutter shell) | TESTED | Riverpod, minimal routing (4 routes), dark theme, `AiChatScreen` (Gate 4: real multi-turn chat, server-persisted history) + `ResearchScreen` (Gate 2) + `MissionScreen` (Gate 3, "Mission complete +X XP" or real failure reason) + `NewsScreen` (Gate 5: extractive digest, no AI summary rendered). 21/21 tests pass, `flutter analyze` clean, manually verified in a real browser against the real backend for all four screens, including a real reload + re-login round trip for chat history and a real digest refresh against the live public RSS feeds. |
-| 3D World (Three.js) | NOT STARTED | Phase 3. |
+| 3D World (Three.js) | NOT STARTED | Phase 3. Gate 6 (2026-08-08) ran an isolated, deletable feasibility spike, not the real 3D World: measured that Flutter Web can host and drive Three.js/WebGL with reliable bidirectional communication via native `dart:js_interop` + vendored (MIT, npm-sourced) Three.js, no CDN for the 3D engine, verified against a real `--release` build — verdict READY for that question. Also found, separately, that Flutter's default release build fetches CanvasKit/fonts from `gstatic.com`, which must be fixed (shared `web/flutter_bootstrap.js` override) before real 3D work begins. See [Gate 6 report](16-roadmap/gate-6-3d-spike-report.md). Spike code lives at `frontend/lib/spike_3d/`, `frontend/web/spike3d/` — fully separate from this row's "not started" real implementation. |
 | Mascot (Aira/Rive) | NOT STARTED | Name confirmed ([ADR-0009](adr/0009-mascot-naming-aira.md)); static placeholder only (`AiraPlaceholder`, real concept art) — no Rive integration, that's Phase 2. Blocked on a real `.riv` asset (Rive's editor is an external design tool, not something a coding Gate can author) — see the Gate 5 proposal's alternatives comparison for why News Intelligence was prioritized instead. |
 | Backend (FastAPI) | TESTED | `GET /health`, `POST/GET /auth/*`, `POST /ai/chat` (deprecated, kept working), `POST /agents/research`, `POST /missions`, `POST/GET /conversations`, `POST/GET .../messages`, `DELETE /conversations/{id}`, `POST /news/refresh`, `GET /news`. 148/148 default tests pass (SQLite + fakes) + 6/6 real-Ollama-marked tests. Verified end-to-end against real PostgreSQL and real Ollama, including through the actual Flutter UI, for `/agents/research`, `/missions`, `/conversations`, and (Postgres + real public RSS feeds, no Ollama involved) `/news`. |
 | AI Core / LLMProvider | TESTED | `LLMProvider.generate(message, tools?, system?, history?) -> LLMResponse`, implemented in `OllamaProvider`. Tool-calling measured (Gate 1, [ADR-0012](adr/0012-tool-calling-contract.md)) and consumed for real by `ResearchAgent` (Gate 2). Bounded conversation history (`history` param, Gate 4) consumed by `ConversationService` — see [context-management.md](06-ai/context-management.md). Still no Agent Router, no durable cross-conversation memory. |
@@ -95,10 +95,22 @@ DEPRECATED    — was built, now retired
 - `POST /api/v1/ai/chat` is now deprecated (`deprecated=True`, unused by the frontend since Gate 4) but kept working rather than removed — see [09-backend/api-design.md](09-backend/api-design.md).
 - AI summarization for News Intelligence is deliberately deferred, not implemented — see [ADR-0014](adr/0014-defer-ai-summarization.md). The digest shows the source's own RSS text (title/excerpt), never AI-generated text. No scheduler/Celery/Redis/RQ was introduced for News ingestion — refresh stays synchronous, triggered only by `POST /news/refresh`, per the explicit Gate 5 GO.
 - News Intelligence's `Source` catalog is exactly the 2 feeds already allowlisted for `read_rss_feed` (`python_blog`, `github_blog`) — expanding it requires a code change + review (migration), same posture as the tool allowlist, never a runtime/API action.
+- Flutter's default web release build fetches CanvasKit and a Roboto font from `gstatic.com` (Flutter platform default, unrelated to Three.js) — discovered during the Gate 6 spike's production-build verification, not yet fixed because the fix (`web/flutter_bootstrap.js`) is a shared, whole-app file out of that spike's isolated scope. See [Gate 6 report](16-roadmap/gate-6-3d-spike-report.md) §5.
+- Gate 6's 3D spike (`frontend/lib/spike_3d/`, `frontend/web/spike3d/`) is a deletable feasibility exercise, not the real 3D World — no ADR was written for 3D architecture yet, per explicit instruction to wait until after measurement and before real 3D World implementation.
 
 ## Recommended next step
 
-Gate 5 is complete: `User → Flutter → FastAPI → NewsService → RSS (real, allowlisted) → NewsItem/Source → PostgreSQL → Flutter` works end to end, is tested, and was verified live against the real public feeds — real, correctly attributed items, idempotent across repeated refreshes. AI summarization was measured (not assumed) and found unreliable at a level incompatible with the product's trust requirement, so it shipped deferred rather than shipped anyway with a disclaimer — see [ADR-0014](adr/0014-defer-ai-summarization.md). Per the gated plan, do not start the next vertical (durable cross-conversation memory, Agent Router, Cybersecurity Hub, richer gamification, Aira's visual/Rive layer, or revisiting AI summarization) without an explicit go-ahead.
+Gate 6 is complete: an isolated feasibility spike measured that Flutter Web can host and drive
+Three.js/WebGL with reliable bidirectional communication, fully locally (vendored Three.js, no
+CDN for the engine), verified against both dev mode and a real `--release` build — verdict
+READY for that question. A separate, real finding (Flutter's own CanvasKit/font CDN default in
+release builds) was measured, documented, and deliberately left unresolved inside the spike
+because fixing it touches a file shared with the already-shipped app. See the
+[Gate 6 report](16-roadmap/gate-6-3d-spike-report.md) for full measurements and the Gate 7
+proposal (first real 3D World increment). Per the gated plan, do not start Gate 7 or any other
+next vertical (durable cross-conversation memory, Agent Router, Cybersecurity Hub, richer
+gamification, Aira's visual/Rive layer, revisiting AI summarization) without an explicit
+go-ahead.
 
 ## Related documentation
 
@@ -113,3 +125,4 @@ Gate 5 is complete: `User → Flutter → FastAPI → NewsService → RSS (real,
 - [Context management](06-ai/context-management.md)
 - [News Intelligence](08-modules/news-intelligence.md)
 - [ADR-0014: Defer AI summarization](adr/0014-defer-ai-summarization.md)
+- [Gate 6: 3D World feasibility spike report](16-roadmap/gate-6-3d-spike-report.md)
