@@ -40,6 +40,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Image.asset('assets/images/logo.png', height: 56),
+                  const SizedBox(height: INovaSpacing.sm),
                   Text(
                     'iNOVA',
                     style: Theme.of(context).textTheme.headlineMedium,

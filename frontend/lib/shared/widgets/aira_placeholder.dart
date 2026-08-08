@@ -1,7 +1,8 @@
 // Static placeholder for Aira — see docs/05-mascot/overview.md and
-// docs/adr/0009-mascot-naming-aira.md. Deliberately NOT a Rive integration
-// yet (Phase 2, see docs/16-roadmap/phases.md); this only proves the shell
-// has a slot for the mascot.
+// docs/adr/0009-mascot-naming-aira.md. Uses the real concept art
+// (assets/images/mascotte-aira.png) but is deliberately NOT a Rive
+// integration yet (Phase 2, see docs/16-roadmap/phases.md) — no animation,
+// no state machine, just the static image in a fixed "idle" presentation.
 import 'package:flutter/material.dart';
 
 import '../../core/theme/inova_colors.dart';
@@ -16,21 +17,12 @@ class AiraPlaceholder extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [INovaColors.cyan, INovaColors.purple],
-            ),
-          ),
-          child: Icon(
-            Icons.auto_awesome,
-            color: INovaColors.white,
-            size: size * 0.45,
+        ClipOval(
+          child: Image.asset(
+            'assets/images/mascotte-aira.png',
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
           ),
         ),
         const SizedBox(height: 8),
