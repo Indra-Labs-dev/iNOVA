@@ -1,8 +1,8 @@
 # Ingestion
 
-**Status:** [PLANNED]
+**Status:** [PARTIAL] — Collector/Normalizer/Source Attribution implemented for RSS (Gate 5); Deduplicator (semantic)/Classifier/AI Summarizer/Personalization stages remain `[PLANNED]`, Phase 5
 **Owner:** Archange Elie Yatte
-**Last Updated:** 2026-08-08
+**Last Updated:** 2026-08-08 (Gate 5 — Extractive News Digest)
 
 ## Purpose
 

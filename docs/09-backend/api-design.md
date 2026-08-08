@@ -1,8 +1,8 @@
 # API Design
 
-**Status:** [PARTIAL] — `/auth`, `/ai` (deprecated), `/agents/research`, `POST /missions`, `/conversations` implemented; the rest remain `[PLANNED]`
+**Status:** [PARTIAL] — `/auth`, `/ai` (deprecated), `/agents/research`, `POST /missions`, `/conversations`, `/news` implemented; the rest remain `[PLANNED]`
 **Owner:** Archange Elie Yatte
-**Last Updated:** 2026-08-08 (Gate 4 — Conversation & Short-Term Memory)
+**Last Updated:** 2026-08-08 (Gate 5 — Extractive News Digest)
 
 ## Purpose
 
@@ -22,7 +22,7 @@ Endpoint inventory and conventions. Auth mechanics are in [authentication.md](au
 /api/v1/tools      — PLANNED (no endpoint exposes the Tool Registry — see docs/adr/0013-static-tool-registry.md: it must stay backend-only, not become an API surface)
 /api/v1/missions   — PARTIAL (POST /missions only — Gate 3, MVP; GET deferred)
 /api/v1/conversations — IMPLEMENTED (Gate 4 — create/list, send/list messages, delete)
-/api/v1/news       — PLANNED
+/api/v1/news       — PARTIAL (Gate 5 — refresh + digest; AI summarization deferred, see ADR-0014)
 /api/v1/research   — PLANNED (superseded in scope by /agents/research for Phase 1 — reconcile naming when the full Research Hub is built, Phase 5)
 /api/v1/security   — PLANNED
 /api/v1/projects   — PLANNED
@@ -52,6 +52,15 @@ All routes require authentication; every `conversation_id` in a URL is re-valida
 
 Orchestration is `ConversationService` (`backend/app/services/conversation_service.py`): reads a bounded window of the conversation's own prior messages (see [Context management](../06-ai/context-management.md) for how the window size was chosen), calls `AIService.generate()` with that history, and persists both turns. No AI/tool/permission logic of its own. See [Memory](../06-ai/memory.md) for what is and isn't in scope (session-only, no durable cross-conversation memory).
 
+## `/api/v1/news` (implemented, Gate 5)
+
+Both routes require authentication — reusing the existing `get_current_user` dependency, no dedicated News permission scope (nothing in the documentation calls for one, and the digest isn't per-user). This is a deliberate consistency choice (same auth boundary as every other endpoint since Gate 2), not a personalization requirement — see [News Intelligence](../08-modules/news-intelligence.md).
+
+- `POST /news/refresh` — declares no request body; triggers `NewsService.refresh()` across every server-seeded `Source`. Response: `{results: [{source_key, items_found, items_new, error}], items_new_total}`. A failing source doesn't block the others.
+- `GET /news` — the current digest, most recently published first. Response items: `{id, title, link, excerpt, source_name, published_at}` — `title`/`excerpt` are always the source's own RSS text, verbatim; **no AI summarization exists in this pipeline** (see [ADR-0014](../adr/0014-defer-ai-summarization.md)).
+
+`Source` rows are never client-writable — seeded exclusively by a migration (`backend/migrations/versions/909bb72ee271_...py`), same "code change + review" posture as `read_rss_feed`'s `RSS_ALLOWLIST`. `NewsItem.link` is unique — idempotent-by-URL persistence, not the deferred semantic-deduplication pipeline stage.
+
 ## Deprecation: `/ai/chat`
 
 Superseded by `POST /api/v1/conversations/{id}/messages`, which is authenticated and persists history — `/ai/chat` is neither. As of Gate 4, no frontend code calls it (`AiChatScreen` was migrated to `/conversations`). Rather than break the Phase 0 contract outright, the route is marked `deprecated=True` (surfaced in the OpenAPI docs) and kept fully functional; it has no scheduled removal date.
@@ -73,3 +82,5 @@ Superseded by `POST /api/v1/conversations/{id}/messages`, which is authenticated
 - [Mission System](../08-modules/mission-system.md)
 - [Memory](../06-ai/memory.md)
 - [Context management](../06-ai/context-management.md)
+- [News Intelligence](../08-modules/news-intelligence.md)
+- [ADR-0014: Defer AI summarization](../adr/0014-defer-ai-summarization.md)
